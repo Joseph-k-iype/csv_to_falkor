@@ -1,0 +1,16 @@
+skill_id,user_id,skill_name,proficiency_level,years_experience,certification,skill_category,last_updated,relevance_score
+601,1,Python Programming,Expert,8,Yes,Technology,2023-04-01,9.2
+602,1,Machine Learning,Advanced,5,Yes,Technology,2023-04-01,8.8
+603,1,Project Management,Intermediate,3,No,Business,2023-04-01,7.1
+604,2,Digital Marketing,Expert,10,Yes,Marketing,2023-04-01,9.5
+605,2,Data Analytics,Advanced,6,Yes,Technology,2023-04-01,8.3
+606,2,Content Creation,Expert,8,No,Creative,2023-04-01,9
+607,3,Statistical Analysis,Expert,7,Yes,Technology,2023-04-01,9.7
+608,3,Research Methods,Expert,9,Yes,Academic,2023-04-01,9.4
+609,3,Data Visualization,Advanced,4,No,Technology,2023-04-01,8.6
+610,4,Curriculum Development,Expert,15,Yes,Education,2023-04-01,9.8
+611,4,Student Assessment,Advanced,12,Yes,Education,2023-04-01,8.9
+612,4,Educational Technology,Intermediate,5,No,Technology,2023-04-01,7.4
+613,5,Product Strategy,Expert,8,Yes,Business,2023-04-01,9.3
+614,5,User Experience,Advanced,6,No,Design,2023-04-01,8.2
+615,5,Market Research,Advanced,7,Yes,Business,2023-04-01,8.7

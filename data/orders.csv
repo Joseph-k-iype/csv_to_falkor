@@ -1,0 +1,11 @@
+order_id,user_id,order_date,total_amount,shipping_address_location_id,payment_method,order_status,delivery_date,shipping_cost,discount_applied,order_source,device_used,session_duration_minutes
+301,1,2023-04-15,429.98,101,Credit Card,Delivered,2023-04-18,15.99,20,Website,Desktop,45
+302,2,2023-04-10,1299.99,102,PayPal,Delivered,2023-04-13,0,0,Mobile App,Smartphone,12
+303,3,2023-04-18,129.98,103,Credit Card,Delivered,2023-04-21,9.99,10,Website,Laptop,28
+304,4,2023-04-08,219.98,104,Debit Card,Delivered,2023-04-12,12.99,0,Mobile App,Tablet,8
+305,5,2023-04-14,1019.98,105,Credit Card,Processing,NULL,25.99,100,Website,Desktop,67
+306,6,2023-04-11,249.98,106,Apple Pay,Delivered,2023-04-14,14.99,25,Mobile App,Smartphone,15
+307,7,2023-04-16,1379.98,107,Credit Card,Shipped,NULL,0,100,Website,Laptop,52
+308,8,2023-04-13,2499.99,108,PayPal,Delivered,2023-04-16,0,0,Website,Desktop,78
+309,9,2023-04-17,239.98,109,Credit Card,Delivered,2023-04-20,11.99,20,Mobile App,Smartphone,22
+310,10,2023-04-26,169.98,110,Google Pay,Processing,NULL,8.99,15,Website,Laptop,33

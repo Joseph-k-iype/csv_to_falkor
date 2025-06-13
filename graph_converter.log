@@ -1,0 +1,326 @@
+2025-06-13 08:07:53,936 - INFO - Configuration loaded from config.json
+2025-06-13 08:07:53,936 - ERROR - Database connection error: FalkorDB.__init__() got an unexpected keyword argument 'decode_responses'
+2025-06-13 08:16:30,179 - INFO - Configuration loaded from config.json
+2025-06-13 08:16:30,182 - INFO - Connected to FalkorDB and selected graph: user-graph
+2025-06-13 08:16:30,182 - INFO - Starting CSV to FalkorDB conversion...
+2025-06-13 08:16:30,182 - INFO - Created index on User.user_id
+2025-06-13 08:16:30,183 - INFO - Created index on User.email
+2025-06-13 08:16:30,183 - INFO - Created index on User.username
+2025-06-13 08:16:30,185 - INFO - Created index on Product.product_id
+2025-06-13 08:16:30,186 - INFO - Created index on Product.name
+2025-06-13 08:16:30,186 - INFO - Created index on Company.company_id
+2025-06-13 08:16:30,187 - INFO - Created index on Company.company_name
+2025-06-13 08:16:30,187 - INFO - Created index on Company.stock_symbol
+2025-06-13 08:16:30,187 - INFO - Created index on Order.order_id
+2025-06-13 08:16:30,188 - INFO - Created index on Order.order_date
+2025-06-13 08:16:30,188 - INFO - Created index on Category.category_id
+2025-06-13 08:16:30,188 - INFO - Created index on Category.category_name
+2025-06-13 08:16:30,189 - INFO - Created index on Location.location_id
+2025-06-13 08:16:30,189 - INFO - Created index on Location.city
+2025-06-13 08:16:30,190 - INFO - Created index on Location.country
+2025-06-13 08:16:30,190 - INFO - Created index on Review.review_id
+2025-06-13 08:16:30,190 - INFO - Created index on Review.product_id
+2025-06-13 08:16:30,191 - INFO - Created index on Review.user_id
+2025-06-13 08:16:30,191 - INFO - Created index on Skill.skill_id
+2025-06-13 08:16:30,191 - INFO - Created index on Skill.skill_name
+2025-06-13 08:16:30,192 - WARNING - Constraint creation failed for User.user_id: errMsg: Invalid input 'F': expected '=' or CREATE CONSTRAINT ON line: 1, column: 19, offset: 18 errCtx: CREATE CONSTRAINT FOR (n:User) REQUIRE n.user_id IS UNIQUE errCtxOffset: 18
+2025-06-13 08:16:30,192 - WARNING - Constraint creation failed for User.email: errMsg: Invalid input 'F': expected '=' or CREATE CONSTRAINT ON line: 1, column: 19, offset: 18 errCtx: CREATE CONSTRAINT FOR (n:User) REQUIRE n.email IS UNIQUE errCtxOffset: 18
+2025-06-13 08:16:30,192 - WARNING - Constraint creation failed for Product.product_id: errMsg: Invalid input 'F': expected '=' or CREATE CONSTRAINT ON line: 1, column: 19, offset: 18 errCtx: CREATE CONSTRAINT FOR (n:Product) REQUIRE n.product_id IS UNIQUE errCtxOffset: 18
+2025-06-13 08:16:30,193 - WARNING - Constraint creation failed for Company.company_id: errMsg: Invalid input 'F': expected '=' or CREATE CONSTRAINT ON line: 1, column: 19, offset: 18 errCtx: CREATE CONSTRAINT FOR (n:Company) REQUIRE n.company_id IS UNIQUE errCtxOffset: 18
+2025-06-13 08:16:30,193 - WARNING - Constraint creation failed for Order.order_id: errMsg: Invalid input 'F': expected '=' or CREATE CONSTRAINT ON line: 1, column: 19, offset: 18 errCtx: CREATE CONSTRAINT FOR (n:Order) REQUIRE n.order_id IS UNIQUE errCtxOffset: 18
+2025-06-13 08:16:30,193 - WARNING - Constraint creation failed for Category.category_id: errMsg: Invalid input 'F': expected '=' or CREATE CONSTRAINT ON line: 1, column: 19, offset: 18 errCtx: CREATE CONSTRAINT FOR (n:Category) REQUIRE n.category_id IS UNIQUE errCtxOffset: 18
+2025-06-13 08:16:30,194 - WARNING - Constraint creation failed for Location.location_id: errMsg: Invalid input 'F': expected '=' or CREATE CONSTRAINT ON line: 1, column: 19, offset: 18 errCtx: CREATE CONSTRAINT FOR (n:Location) REQUIRE n.location_id IS UNIQUE errCtxOffset: 18
+2025-06-13 08:16:30,194 - WARNING - Constraint creation failed for Review.review_id: errMsg: Invalid input 'F': expected '=' or CREATE CONSTRAINT ON line: 1, column: 19, offset: 18 errCtx: CREATE CONSTRAINT FOR (n:Review) REQUIRE n.review_id IS UNIQUE errCtxOffset: 18
+2025-06-13 08:16:30,202 - INFO - Processing 10 rows from data/users.csv
+2025-06-13 08:16:30,210 - INFO - Created 10 User nodes from data/users.csv
+2025-06-13 08:16:30,213 - INFO - Processing 10 rows from data/companies.csv
+2025-06-13 08:16:30,216 - INFO - Created 10 Company nodes from data/companies.csv
+2025-06-13 08:16:30,218 - INFO - Processing 10 rows from data/locations.csv
+2025-06-13 08:16:30,221 - INFO - Created 10 Location nodes from data/locations.csv
+2025-06-13 08:16:30,223 - INFO - Processing 14 rows from data/categories.csv
+2025-06-13 08:16:30,225 - INFO - Created 14 Category nodes from data/categories.csv
+2025-06-13 08:16:30,227 - INFO - Processing 10 rows from data/products.csv
+2025-06-13 08:16:30,229 - INFO - Created 10 Product nodes from data/products.csv
+2025-06-13 08:16:30,231 - INFO - Processing 10 rows from data/orders.csv
+2025-06-13 08:16:30,233 - INFO - Created 10 Order nodes from data/orders.csv
+2025-06-13 08:16:30,235 - INFO - Processing 10 rows from data/order_items.csv
+2025-06-13 08:16:30,238 - INFO - Created 10 OrderItem nodes from data/order_items.csv
+2025-06-13 08:16:30,240 - INFO - Processing 10 rows from data/reviews.csv
+2025-06-13 08:16:30,243 - INFO - Created 10 Review nodes from data/reviews.csv
+2025-06-13 08:16:30,244 - INFO - Processing 15 rows from data/user_skills.csv
+2025-06-13 08:16:30,247 - INFO - Created 15 Skill nodes from data/user_skills.csv
+2025-06-13 08:16:30,249 - INFO - Processing 10 relationships from data/users.csv
+2025-06-13 08:16:30,254 - INFO - Created 10 relationships from data/users.csv
+2025-06-13 08:16:30,256 - INFO - Processing 10 relationships from data/companies.csv
+2025-06-13 08:16:30,263 - INFO - Created 10 relationships from data/companies.csv
+2025-06-13 08:16:30,265 - INFO - Processing 10 relationships from data/companies.csv
+2025-06-13 08:16:30,271 - INFO - Created 10 relationships from data/companies.csv
+2025-06-13 08:16:30,273 - INFO - Processing 14 relationships from data/categories.csv
+2025-06-13 08:16:30,282 - INFO - Created 10 relationships from data/categories.csv
+2025-06-13 08:16:30,284 - INFO - Processing 10 relationships from data/products.csv
+2025-06-13 08:16:30,290 - INFO - Created 10 relationships from data/products.csv
+2025-06-13 08:16:30,291 - INFO - Processing 10 relationships from data/products.csv
+2025-06-13 08:16:30,298 - INFO - Created 10 relationships from data/products.csv
+2025-06-13 08:16:30,300 - INFO - Processing 10 relationships from data/products.csv
+2025-06-13 08:16:30,306 - INFO - Created 10 relationships from data/products.csv
+2025-06-13 08:16:30,307 - INFO - Processing 10 relationships from data/orders.csv
+2025-06-13 08:16:30,312 - INFO - Created 10 relationships from data/orders.csv
+2025-06-13 08:16:30,314 - INFO - Processing 10 relationships from data/orders.csv
+2025-06-13 08:16:30,320 - INFO - Created 10 relationships from data/orders.csv
+2025-06-13 08:16:30,321 - INFO - Processing 10 relationships from data/order_items.csv
+2025-06-13 08:16:30,327 - INFO - Created 10 relationships from data/order_items.csv
+2025-06-13 08:16:30,329 - INFO - Processing 10 relationships from data/order_items.csv
+2025-06-13 08:16:30,334 - INFO - Created 10 relationships from data/order_items.csv
+2025-06-13 08:16:30,337 - INFO - Processing 10 relationships from data/reviews.csv
+2025-06-13 08:16:30,343 - INFO - Created 10 relationships from data/reviews.csv
+2025-06-13 08:16:30,344 - INFO - Processing 10 relationships from data/reviews.csv
+2025-06-13 08:16:30,350 - INFO - Created 10 relationships from data/reviews.csv
+2025-06-13 08:16:30,351 - INFO - Processing 10 relationships from data/reviews.csv
+2025-06-13 08:16:30,358 - INFO - Created 10 relationships from data/reviews.csv
+2025-06-13 08:16:30,359 - INFO - Processing 15 relationships from data/user_skills.csv
+2025-06-13 08:16:30,368 - INFO - Created 15 relationships from data/user_skills.csv
+2025-06-13 08:16:30,369 - INFO - Processing 10 relationships from data/company_relationships.csv
+2025-06-13 08:16:30,375 - INFO - Created 10 relationships from data/company_relationships.csv
+2025-06-13 08:16:30,378 - INFO - Conversion completed successfully!
+2025-06-13 08:16:30,378 - INFO - Profile report saved to: user-graph_profile_report.json
+2025-06-13 08:16:30,378 - INFO - Total nodes created: 99
+2025-06-13 08:16:30,378 - INFO - Total relationships created: 165
+2025-06-13 08:16:30,378 - INFO - Processing time: 0.19 seconds
+2025-06-13 08:20:41,240 - INFO - Configuration loaded from config.json
+2025-06-13 08:20:41,243 - INFO - Connected to FalkorDB and selected graph: user-graph
+2025-06-13 08:20:41,243 - INFO - Starting CSV to FalkorDB conversion...
+2025-06-13 08:20:41,243 - WARNING - Index creation failed for User.user_id: Attribute 'user_id' is already indexed
+2025-06-13 08:20:41,244 - WARNING - Index creation failed for User.email: Attribute 'email' is already indexed
+2025-06-13 08:20:41,244 - WARNING - Index creation failed for User.username: Attribute 'username' is already indexed
+2025-06-13 08:20:41,244 - WARNING - Index creation failed for Product.product_id: Attribute 'product_id' is already indexed
+2025-06-13 08:20:41,244 - WARNING - Index creation failed for Product.name: Attribute 'name' is already indexed
+2025-06-13 08:20:41,245 - WARNING - Index creation failed for Company.company_id: Attribute 'company_id' is already indexed
+2025-06-13 08:20:41,245 - WARNING - Index creation failed for Company.company_name: Attribute 'company_name' is already indexed
+2025-06-13 08:20:41,245 - WARNING - Index creation failed for Company.stock_symbol: Attribute 'stock_symbol' is already indexed
+2025-06-13 08:20:41,246 - WARNING - Index creation failed for Order.order_id: Attribute 'order_id' is already indexed
+2025-06-13 08:20:41,246 - WARNING - Index creation failed for Order.order_date: Attribute 'order_date' is already indexed
+2025-06-13 08:20:41,246 - WARNING - Index creation failed for Category.category_id: Attribute 'category_id' is already indexed
+2025-06-13 08:20:41,246 - WARNING - Index creation failed for Category.category_name: Attribute 'category_name' is already indexed
+2025-06-13 08:20:41,247 - WARNING - Index creation failed for Location.location_id: Attribute 'location_id' is already indexed
+2025-06-13 08:20:41,247 - WARNING - Index creation failed for Location.city: Attribute 'city' is already indexed
+2025-06-13 08:20:41,247 - WARNING - Index creation failed for Location.country: Attribute 'country' is already indexed
+2025-06-13 08:20:41,248 - WARNING - Index creation failed for Review.review_id: Attribute 'review_id' is already indexed
+2025-06-13 08:20:41,248 - WARNING - Index creation failed for Review.product_id: Attribute 'product_id' is already indexed
+2025-06-13 08:20:41,248 - WARNING - Index creation failed for Review.user_id: Attribute 'user_id' is already indexed
+2025-06-13 08:20:41,248 - WARNING - Index creation failed for Skill.skill_id: Attribute 'skill_id' is already indexed
+2025-06-13 08:20:41,249 - WARNING - Index creation failed for Skill.skill_name: Attribute 'skill_name' is already indexed
+2025-06-13 08:20:41,249 - WARNING - Constraint creation failed for User.user_id: Invalid constraint command use the GRAPH.CONSTRAINT command instead
+2025-06-13 08:20:41,249 - WARNING - Constraint creation failed for User.email: Invalid constraint command use the GRAPH.CONSTRAINT command instead
+2025-06-13 08:20:41,250 - WARNING - Constraint creation failed for Product.product_id: Invalid constraint command use the GRAPH.CONSTRAINT command instead
+2025-06-13 08:20:41,250 - WARNING - Constraint creation failed for Company.company_id: Invalid constraint command use the GRAPH.CONSTRAINT command instead
+2025-06-13 08:20:41,250 - WARNING - Constraint creation failed for Order.order_id: Invalid constraint command use the GRAPH.CONSTRAINT command instead
+2025-06-13 08:20:41,251 - WARNING - Constraint creation failed for Category.category_id: Invalid constraint command use the GRAPH.CONSTRAINT command instead
+2025-06-13 08:20:41,251 - WARNING - Constraint creation failed for Location.location_id: Invalid constraint command use the GRAPH.CONSTRAINT command instead
+2025-06-13 08:20:41,251 - WARNING - Constraint creation failed for Review.review_id: Invalid constraint command use the GRAPH.CONSTRAINT command instead
+2025-06-13 08:20:41,255 - INFO - Processing 10 rows from data/users.csv
+2025-06-13 08:20:41,258 - INFO - Created 10 User nodes from data/users.csv
+2025-06-13 08:20:41,260 - INFO - Processing 10 rows from data/companies.csv
+2025-06-13 08:20:41,262 - INFO - Created 10 Company nodes from data/companies.csv
+2025-06-13 08:20:41,264 - INFO - Processing 10 rows from data/locations.csv
+2025-06-13 08:20:41,267 - INFO - Created 10 Location nodes from data/locations.csv
+2025-06-13 08:20:41,270 - INFO - Processing 14 rows from data/categories.csv
+2025-06-13 08:20:41,274 - INFO - Created 14 Category nodes from data/categories.csv
+2025-06-13 08:20:41,277 - INFO - Processing 10 rows from data/products.csv
+2025-06-13 08:20:41,280 - INFO - Created 10 Product nodes from data/products.csv
+2025-06-13 08:20:41,282 - INFO - Processing 10 rows from data/orders.csv
+2025-06-13 08:20:41,284 - INFO - Created 10 Order nodes from data/orders.csv
+2025-06-13 08:20:41,286 - INFO - Processing 10 rows from data/order_items.csv
+2025-06-13 08:20:41,288 - INFO - Created 10 OrderItem nodes from data/order_items.csv
+2025-06-13 08:20:41,290 - INFO - Processing 10 rows from data/reviews.csv
+2025-06-13 08:20:41,292 - INFO - Created 10 Review nodes from data/reviews.csv
+2025-06-13 08:20:41,294 - INFO - Processing 15 rows from data/user_skills.csv
+2025-06-13 08:20:41,298 - INFO - Created 15 Skill nodes from data/user_skills.csv
+2025-06-13 08:20:41,299 - INFO - Processing 10 relationships from data/users.csv
+2025-06-13 08:20:41,306 - INFO - Created 10 relationships from data/users.csv
+2025-06-13 08:20:41,308 - INFO - Processing 10 relationships from data/companies.csv
+2025-06-13 08:20:41,313 - INFO - Created 10 relationships from data/companies.csv
+2025-06-13 08:20:41,316 - INFO - Processing 10 relationships from data/companies.csv
+2025-06-13 08:20:41,322 - INFO - Created 10 relationships from data/companies.csv
+2025-06-13 08:20:41,323 - INFO - Processing 14 relationships from data/categories.csv
+2025-06-13 08:20:41,330 - INFO - Created 10 relationships from data/categories.csv
+2025-06-13 08:20:41,332 - INFO - Processing 10 relationships from data/products.csv
+2025-06-13 08:20:41,338 - INFO - Created 10 relationships from data/products.csv
+2025-06-13 08:20:41,340 - INFO - Processing 10 relationships from data/products.csv
+2025-06-13 08:20:41,346 - INFO - Created 10 relationships from data/products.csv
+2025-06-13 08:20:41,348 - INFO - Processing 10 relationships from data/products.csv
+2025-06-13 08:20:41,354 - INFO - Created 10 relationships from data/products.csv
+2025-06-13 08:20:41,356 - INFO - Processing 10 relationships from data/orders.csv
+2025-06-13 08:20:41,361 - INFO - Created 10 relationships from data/orders.csv
+2025-06-13 08:20:41,363 - INFO - Processing 10 relationships from data/orders.csv
+2025-06-13 08:20:41,370 - INFO - Created 10 relationships from data/orders.csv
+2025-06-13 08:20:41,371 - INFO - Processing 10 relationships from data/order_items.csv
+2025-06-13 08:20:41,377 - INFO - Created 10 relationships from data/order_items.csv
+2025-06-13 08:20:41,379 - INFO - Processing 10 relationships from data/order_items.csv
+2025-06-13 08:20:41,387 - INFO - Created 10 relationships from data/order_items.csv
+2025-06-13 08:20:41,390 - INFO - Processing 10 relationships from data/reviews.csv
+2025-06-13 08:20:41,399 - INFO - Created 10 relationships from data/reviews.csv
+2025-06-13 08:20:41,401 - INFO - Processing 10 relationships from data/reviews.csv
+2025-06-13 08:20:41,408 - INFO - Created 10 relationships from data/reviews.csv
+2025-06-13 08:20:41,409 - INFO - Processing 10 relationships from data/reviews.csv
+2025-06-13 08:20:41,417 - INFO - Created 10 relationships from data/reviews.csv
+2025-06-13 08:20:41,419 - INFO - Processing 15 relationships from data/user_skills.csv
+2025-06-13 08:20:41,428 - INFO - Created 15 relationships from data/user_skills.csv
+2025-06-13 08:20:41,430 - INFO - Processing 10 relationships from data/company_relationships.csv
+2025-06-13 08:20:41,438 - INFO - Created 10 relationships from data/company_relationships.csv
+2025-06-13 08:20:41,441 - INFO - Conversion completed successfully!
+2025-06-13 08:20:41,441 - INFO - Profile report saved to: user-graph_profile_report.json
+2025-06-13 08:20:41,441 - INFO - Total nodes created: 99
+2025-06-13 08:20:41,441 - INFO - Total relationships created: 165
+2025-06-13 08:20:41,441 - INFO - Processing time: 0.20 seconds
+2025-06-13 08:32:33,144 - INFO - Configuration loaded from config.json
+2025-06-13 08:32:33,147 - INFO - Connected to FalkorDB and selected graph: user-graph
+2025-06-13 08:32:33,148 - INFO - Starting CSV to FalkorDB conversion...
+2025-06-13 08:32:33,154 - INFO - Created unique constraint on User.user_id - Status: PENDING
+2025-06-13 08:32:33,155 - INFO - Created unique constraint on User.email - Status: PENDING
+2025-06-13 08:32:33,155 - INFO - Created unique constraint on Product.product_id - Status: PENDING
+2025-06-13 08:32:33,155 - INFO - Created unique constraint on Company.company_id - Status: PENDING
+2025-06-13 08:32:33,155 - INFO - Created unique constraint on Order.order_id - Status: PENDING
+2025-06-13 08:32:33,156 - INFO - Created unique constraint on Category.category_id - Status: PENDING
+2025-06-13 08:32:33,156 - INFO - Created unique constraint on Location.location_id - Status: PENDING
+2025-06-13 08:32:33,156 - INFO - Created unique constraint on Review.review_id - Status: PENDING
+2025-06-13 08:32:33,160 - INFO - Processing 10 rows from data/users.csv
+2025-06-13 08:32:33,164 - INFO - Created 10 User nodes from data/users.csv
+2025-06-13 08:32:33,167 - INFO - Processing 10 rows from data/companies.csv
+2025-06-13 08:32:33,170 - INFO - Created 10 Company nodes from data/companies.csv
+2025-06-13 08:32:33,173 - INFO - Processing 10 rows from data/locations.csv
+2025-06-13 08:32:33,176 - INFO - Created 10 Location nodes from data/locations.csv
+2025-06-13 08:32:33,178 - INFO - Processing 14 rows from data/categories.csv
+2025-06-13 08:32:33,182 - INFO - Created 14 Category nodes from data/categories.csv
+2025-06-13 08:32:33,184 - INFO - Processing 10 rows from data/products.csv
+2025-06-13 08:32:33,187 - INFO - Created 10 Product nodes from data/products.csv
+2025-06-13 08:32:33,190 - INFO - Processing 10 rows from data/orders.csv
+2025-06-13 08:32:33,193 - INFO - Created 10 Order nodes from data/orders.csv
+2025-06-13 08:32:33,195 - INFO - Processing 10 rows from data/order_items.csv
+2025-06-13 08:32:33,197 - INFO - Created 10 OrderItem nodes from data/order_items.csv
+2025-06-13 08:32:33,199 - INFO - Processing 10 rows from data/reviews.csv
+2025-06-13 08:32:33,202 - INFO - Created 10 Review nodes from data/reviews.csv
+2025-06-13 08:32:33,204 - INFO - Processing 15 rows from data/user_skills.csv
+2025-06-13 08:32:33,208 - INFO - Created 15 Skill nodes from data/user_skills.csv
+2025-06-13 08:32:33,212 - INFO - Processing 10 relationships from data/users.csv
+2025-06-13 08:32:33,225 - INFO - Created 10 relationships from data/users.csv
+2025-06-13 08:32:33,228 - INFO - Processing 10 relationships from data/companies.csv
+2025-06-13 08:32:33,240 - INFO - Created 10 relationships from data/companies.csv
+2025-06-13 08:32:33,244 - INFO - Processing 10 relationships from data/companies.csv
+2025-06-13 08:32:33,255 - INFO - Created 10 relationships from data/companies.csv
+2025-06-13 08:32:33,257 - INFO - Processing 14 relationships from data/categories.csv
+2025-06-13 08:32:33,269 - INFO - Created 10 relationships from data/categories.csv
+2025-06-13 08:32:33,272 - INFO - Processing 10 relationships from data/products.csv
+2025-06-13 08:32:33,280 - INFO - Created 10 relationships from data/products.csv
+2025-06-13 08:32:33,283 - INFO - Processing 10 relationships from data/products.csv
+2025-06-13 08:32:33,289 - INFO - Created 10 relationships from data/products.csv
+2025-06-13 08:32:33,291 - INFO - Processing 10 relationships from data/products.csv
+2025-06-13 08:32:33,299 - INFO - Created 10 relationships from data/products.csv
+2025-06-13 08:32:33,300 - INFO - Processing 10 relationships from data/orders.csv
+2025-06-13 08:32:33,306 - INFO - Created 10 relationships from data/orders.csv
+2025-06-13 08:32:33,308 - INFO - Processing 10 relationships from data/orders.csv
+2025-06-13 08:32:33,316 - INFO - Created 10 relationships from data/orders.csv
+2025-06-13 08:32:33,317 - INFO - Processing 10 relationships from data/order_items.csv
+2025-06-13 08:32:33,323 - INFO - Created 10 relationships from data/order_items.csv
+2025-06-13 08:32:33,325 - INFO - Processing 10 relationships from data/order_items.csv
+2025-06-13 08:32:33,332 - INFO - Created 10 relationships from data/order_items.csv
+2025-06-13 08:32:33,334 - INFO - Processing 10 relationships from data/reviews.csv
+2025-06-13 08:32:33,340 - INFO - Created 10 relationships from data/reviews.csv
+2025-06-13 08:32:33,342 - INFO - Processing 10 relationships from data/reviews.csv
+2025-06-13 08:32:33,348 - INFO - Created 10 relationships from data/reviews.csv
+2025-06-13 08:32:33,350 - INFO - Processing 10 relationships from data/reviews.csv
+2025-06-13 08:32:33,356 - INFO - Created 10 relationships from data/reviews.csv
+2025-06-13 08:32:33,358 - INFO - Processing 15 relationships from data/user_skills.csv
+2025-06-13 08:32:33,368 - INFO - Created 15 relationships from data/user_skills.csv
+2025-06-13 08:32:33,369 - INFO - Processing 10 relationships from data/company_relationships.csv
+2025-06-13 08:32:33,377 - INFO - Created 10 relationships from data/company_relationships.csv
+2025-06-13 08:32:33,380 - INFO - Conversion completed successfully!
+2025-06-13 08:32:33,380 - INFO - Profile report saved to: user-graph_profile_report.json
+2025-06-13 08:32:33,381 - INFO - Total nodes created: 99
+2025-06-13 08:32:33,381 - INFO - Total relationships created: 165
+2025-06-13 08:32:33,381 - INFO - Processing time: 0.23 seconds
+2025-06-13 08:34:46,652 - INFO - Configuration loaded from config.json
+2025-06-13 08:34:46,658 - INFO - Connected to FalkorDB and selected graph: user-graph2
+2025-06-13 08:34:46,658 - INFO - Starting CSV to FalkorDB conversion...
+2025-06-13 08:34:46,659 - INFO - Created index on User.user_id
+2025-06-13 08:34:46,660 - INFO - Created index on User.email
+2025-06-13 08:34:46,661 - INFO - Created index on User.username
+2025-06-13 08:34:46,662 - INFO - Created index on Product.product_id
+2025-06-13 08:34:46,663 - INFO - Created index on Product.name
+2025-06-13 08:34:46,664 - INFO - Created index on Company.company_id
+2025-06-13 08:34:46,665 - INFO - Created index on Company.company_name
+2025-06-13 08:34:46,666 - INFO - Created index on Company.stock_symbol
+2025-06-13 08:34:46,667 - INFO - Created index on Order.order_id
+2025-06-13 08:34:46,668 - INFO - Created index on Order.order_date
+2025-06-13 08:34:46,669 - INFO - Created index on Category.category_id
+2025-06-13 08:34:46,670 - INFO - Created index on Category.category_name
+2025-06-13 08:34:46,671 - INFO - Created index on Location.location_id
+2025-06-13 08:34:46,672 - INFO - Created index on Location.city
+2025-06-13 08:34:46,673 - INFO - Created index on Location.country
+2025-06-13 08:34:46,674 - INFO - Created index on Review.review_id
+2025-06-13 08:34:46,675 - INFO - Created index on Review.product_id
+2025-06-13 08:34:46,676 - INFO - Created index on Review.user_id
+2025-06-13 08:34:46,677 - INFO - Created index on Skill.skill_id
+2025-06-13 08:34:46,678 - INFO - Created index on Skill.skill_name
+2025-06-13 08:34:46,680 - INFO - Created unique constraint on User.user_id - Status: PENDING
+2025-06-13 08:34:46,680 - INFO - Created unique constraint on User.email - Status: PENDING
+2025-06-13 08:34:46,681 - INFO - Created unique constraint on Product.product_id - Status: PENDING
+2025-06-13 08:34:46,682 - INFO - Created unique constraint on Company.company_id - Status: PENDING
+2025-06-13 08:34:46,682 - INFO - Created unique constraint on Order.order_id - Status: PENDING
+2025-06-13 08:34:46,682 - INFO - Created unique constraint on Category.category_id - Status: PENDING
+2025-06-13 08:34:46,683 - INFO - Created unique constraint on Location.location_id - Status: PENDING
+2025-06-13 08:34:46,683 - INFO - Created unique constraint on Review.review_id - Status: PENDING
+2025-06-13 08:34:46,691 - INFO - Processing 10 rows from data/users.csv
+2025-06-13 08:34:46,699 - INFO - Created 10 User nodes from data/users.csv
+2025-06-13 08:34:46,703 - INFO - Processing 10 rows from data/companies.csv
+2025-06-13 08:34:46,708 - INFO - Created 10 Company nodes from data/companies.csv
+2025-06-13 08:34:46,712 - INFO - Processing 10 rows from data/locations.csv
+2025-06-13 08:34:46,719 - INFO - Created 10 Location nodes from data/locations.csv
+2025-06-13 08:34:46,723 - INFO - Processing 14 rows from data/categories.csv
+2025-06-13 08:34:46,729 - INFO - Created 14 Category nodes from data/categories.csv
+2025-06-13 08:34:46,733 - INFO - Processing 10 rows from data/products.csv
+2025-06-13 08:34:46,740 - INFO - Created 10 Product nodes from data/products.csv
+2025-06-13 08:34:46,744 - INFO - Processing 10 rows from data/orders.csv
+2025-06-13 08:34:46,750 - INFO - Created 10 Order nodes from data/orders.csv
+2025-06-13 08:34:46,754 - INFO - Processing 10 rows from data/order_items.csv
+2025-06-13 08:34:46,759 - INFO - Created 10 OrderItem nodes from data/order_items.csv
+2025-06-13 08:34:46,763 - INFO - Processing 10 rows from data/reviews.csv
+2025-06-13 08:34:46,770 - INFO - Created 10 Review nodes from data/reviews.csv
+2025-06-13 08:34:46,773 - INFO - Processing 15 rows from data/user_skills.csv
+2025-06-13 08:34:46,780 - INFO - Created 15 Skill nodes from data/user_skills.csv
+2025-06-13 08:34:46,784 - INFO - Processing 10 relationships from data/users.csv
+2025-06-13 08:34:46,800 - INFO - Created 10 relationships from data/users.csv
+2025-06-13 08:34:46,804 - INFO - Processing 10 relationships from data/companies.csv
+2025-06-13 08:34:46,817 - INFO - Created 10 relationships from data/companies.csv
+2025-06-13 08:34:46,821 - INFO - Processing 10 relationships from data/companies.csv
+2025-06-13 08:34:46,834 - INFO - Created 10 relationships from data/companies.csv
+2025-06-13 08:34:46,838 - INFO - Processing 14 relationships from data/categories.csv
+2025-06-13 08:34:46,854 - INFO - Created 10 relationships from data/categories.csv
+2025-06-13 08:34:46,858 - INFO - Processing 10 relationships from data/products.csv
+2025-06-13 08:34:46,874 - INFO - Created 10 relationships from data/products.csv
+2025-06-13 08:34:46,879 - INFO - Processing 10 relationships from data/products.csv
+2025-06-13 08:34:46,899 - INFO - Created 10 relationships from data/products.csv
+2025-06-13 08:34:46,904 - INFO - Processing 10 relationships from data/products.csv
+2025-06-13 08:34:46,925 - INFO - Created 10 relationships from data/products.csv
+2025-06-13 08:34:46,929 - INFO - Processing 10 relationships from data/orders.csv
+2025-06-13 08:34:46,949 - INFO - Created 10 relationships from data/orders.csv
+2025-06-13 08:34:46,954 - INFO - Processing 10 relationships from data/orders.csv
+2025-06-13 08:34:46,973 - INFO - Created 10 relationships from data/orders.csv
+2025-06-13 08:34:46,977 - INFO - Processing 10 relationships from data/order_items.csv
+2025-06-13 08:34:46,999 - INFO - Created 10 relationships from data/order_items.csv
+2025-06-13 08:34:47,003 - INFO - Processing 10 relationships from data/order_items.csv
+2025-06-13 08:34:47,020 - INFO - Created 10 relationships from data/order_items.csv
+2025-06-13 08:34:47,024 - INFO - Processing 10 relationships from data/reviews.csv
+2025-06-13 08:34:47,041 - INFO - Created 10 relationships from data/reviews.csv
+2025-06-13 08:34:47,045 - INFO - Processing 10 relationships from data/reviews.csv
+2025-06-13 08:34:47,063 - INFO - Created 10 relationships from data/reviews.csv
+2025-06-13 08:34:47,066 - INFO - Processing 10 relationships from data/reviews.csv
+2025-06-13 08:34:47,082 - INFO - Created 10 relationships from data/reviews.csv
+2025-06-13 08:34:47,086 - INFO - Processing 15 relationships from data/user_skills.csv
+2025-06-13 08:34:47,111 - INFO - Created 15 relationships from data/user_skills.csv
+2025-06-13 08:34:47,114 - INFO - Processing 10 relationships from data/company_relationships.csv
+2025-06-13 08:34:47,132 - INFO - Created 10 relationships from data/company_relationships.csv
+2025-06-13 08:34:47,140 - INFO - Conversion completed successfully!
+2025-06-13 08:34:47,141 - INFO - Profile report saved to: user-graph2_profile_report.json
+2025-06-13 08:34:47,141 - INFO - Total nodes created: 99
+2025-06-13 08:34:47,141 - INFO - Total relationships created: 165
+2025-06-13 08:34:47,141 - INFO - Processing time: 0.47 seconds

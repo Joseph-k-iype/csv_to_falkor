@@ -1,0 +1,47 @@
+{
+  "summary": {
+    "total_nodes": 99,
+    "total_relationships": 155,
+    "graph_density": 0.015976087404658834,
+    "processing_time_seconds": 0.47451090812683105,
+    "files_processed": 25
+  },
+  "node_distribution": {
+    "Skill": 15,
+    "Category": 14,
+    "Location": 10,
+    "Product": 10,
+    "OrderItem": 10,
+    "Company": 10,
+    "Review": 10,
+    "Order": 10,
+    "User": 10
+  },
+  "relationship_distribution": {
+    "HAS_SKILL": 15,
+    "CONTAINS_PRODUCT": 10,
+    "LIVES_IN": 10,
+    "HEADQUARTERED_IN": 10,
+    "MANUFACTURED_IN": 10,
+    "BELONGS_TO_CATEGORY": 10,
+    "PLACED_BY": 10,
+    "WRITTEN_BY": 10,
+    "BUSINESS_RELATIONSHIP": 10,
+    "REVIEWS": 10,
+    "REVIEW_OF_ORDER": 10,
+    "SHIPPED_TO": 10,
+    "MANUFACTURED_BY": 10,
+    "ITEM_IN_ORDER": 10,
+    "SUBCATEGORY_OF": 10
+  },
+  "performance_stats": {
+    "nodes_created": 99,
+    "relationships_created": 165,
+    "indexes_created": 20,
+    "constraints_created": 8,
+    "processing_time": 0.47451090812683105,
+    "files_processed": 25,
+    "errors": []
+  },
+  "timestamp": "2025-06-13T08:34:47.140411"
+}

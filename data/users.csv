@@ -1,0 +1,11 @@
+user_id,username,email,age,location_id,join_date,account_type,reputation_score,profession,income_bracket,education_level,birth_country,languages_spoken,personality_type,spending_pattern,social_influence_score
+1,alice_smith,alice@email.com,28,101,2023-01-15,premium,4.8,Software Engineer,75000-100000,Masters,USA,"English,Spanish",INTJ,high_value,8.5
+2,bob_jones,bob@email.com,34,102,2023-02-20,standard,4.2,Marketing Manager,50000-75000,Bachelors,Canada,"English,French",ENFP,frequent,6.2
+3,carol_white,carol@email.com,22,103,2023-03-10,premium,4.9,Data Scientist,100000-150000,PhD,USA,English,ISTJ,research_based,9.1
+4,david_brown,david@email.com,41,104,2023-01-05,standard,3.7,Teacher,30000-50000,Masters,UK,"English,German",ESFJ,budget_conscious,4.3
+5,eve_wilson,eve@email.com,29,105,2023-04-12,premium,4.6,Product Manager,100000-150000,MBA,Australia,"English,Mandarin",ENTJ,strategic,7.8
+6,frank_davis,frank@email.com,35,106,2023-02-28,standard,4.1,Mechanical Engineer,75000-100000,Bachelors,USA,English,ISTP,practical,5.9
+7,grace_miller,grace@email.com,26,107,2023-03-22,premium,4.7,UX Designer,60000-75000,Bachelors,Sweden,"English,Swedish",INFP,aesthetic_focused,7.2
+8,henry_garcia,henry@email.com,38,108,2023-01-30,standard,3.9,Sales Director,75000-100000,Bachelors,Mexico,"Spanish,English",ESTP,relationship_driven,6.8
+9,iris_rodriguez,iris@email.com,31,109,2023-04-05,premium,4.4,Financial Analyst,80000-100000,CPA,Spain,"Spanish,English,French",INTJ,analytical,8
+10,jack_martinez,jack@email.com,27,110,2023-02-14,standard,4,Startup Founder,150000,Bachelors,Brazil,"Portuguese,English",ENTP,experimental,9.3

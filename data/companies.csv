@@ -1,0 +1,11 @@
+company_id,company_name,industry,headquarters_location_id,founded_year,revenue_bracket,employee_count,stock_symbol,ceo_user_id,sustainability_rating,market_cap_bracket,primary_business_model
+201,AudioTech Industries,Electronics,101,1995,100M-1B,2500,AUDIO,11,8.2,1B-10B,B2C Manufacturing
+202,TechCorp Global,Technology,102,1998,1B-10B,15000,TECH,12,7.8,10B-100B,B2B Software
+203,SportsBrand International,Apparel,103,1985,500M-1B,8000,SPORT,13,9.1,1B-10B,B2C Retail
+204,HomeAppliances Co,Home Goods,104,1975,200M-500M,3500,HOME,14,6.5,500M-1B,B2C Manufacturing
+205,CompuTech Systems,Computer Hardware,105,2001,2B-5B,12000,COMP,15,8.7,5B-10B,B2B Technology
+206,FitnessGear Pro,Sports Equipment,106,1990,50M-100M,1200,FIT,16,8.9,100M-500M,B2C Specialized
+207,FurniturePlus Ltd,Furniture,107,1980,300M-500M,4500,FURN,17,7.3,500M-1B,B2C Retail
+208,KitchenPro Solutions,Kitchenware,108,1988,100M-200M,2800,COOK,18,8.1,200M-500M,B2C Manufacturing
+209,LightingCo Design,Lighting,109,1992,75M-150M,1800,LIGHT,19,8.4,100M-500M,B2C Design
+210,HydroGear Innovations,Water Sports,110,2005,25M-50M,500,HYDRO,20,9.5,50M-100M,B2C Sustainable

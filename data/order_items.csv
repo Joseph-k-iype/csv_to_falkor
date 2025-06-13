@@ -1,0 +1,11 @@
+order_item_id,order_id,product_id,quantity,unit_price,total_price,discount_per_item,gift_wrap,special_instructions,return_eligible,warranty_extended
+401,301,101,1,299.99,299.99,20,No,NULL,Yes,No
+402,301,103,1,189.99,189.99,0,Yes,Gift message included,Yes,No
+403,302,102,1,1299.99,1299.99,0,No,NULL,Yes,Yes
+404,303,106,1,79.99,79.99,10,No,NULL,Yes,No
+405,303,110,1,49.99,49.99,0,No,Color preference: Blue,Yes,No
+406,304,104,1,149.99,149.99,0,Yes,Birthday gift,Yes,No
+407,304,108,1,159.99,159.99,0,No,NULL,Yes,No
+408,305,107,1,899.99,899.99,50,No,Office delivery instructions,Yes,Yes
+409,305,109,1,119.99,119.99,0,No,NULL,Yes,No
+410,306,101,1,299.99,299.99,25,No,NULL,Yes,No

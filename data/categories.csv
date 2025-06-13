@@ -1,0 +1,15 @@
+category_id,category_name,description,parent_category_id,commission_rate,market_size_millions,growth_rate_percent,seasonality_factor,target_age_group,purchase_frequency
+1000,Technology,All technology and electronic products,NULL,5,850000,12.5,Low,25-45,Annual
+1001,Audio Equipment,Headphones speakers and audio devices,1000,6,25000,8.2,Medium,20-50,Bi-Annual
+1002,Mobile Devices,Smartphones tablets and accessories,1000,4,180000,15.8,Low,18-55,Bi-Annual
+1003,Computers,Laptops desktops and computing devices,1000,5.5,120000,6.3,Back-to-School,22-45,Tri-Annual
+2000,Sports & Fitness,Athletic and fitness equipment and apparel,NULL,8,95000,11.2,High,16-50,Seasonal
+2001,Athletic Footwear,Running training and sport-specific shoes,2000,9,28000,7.8,Medium,16-40,Bi-Annual
+2002,Fitness Equipment,Exercise and workout equipment,2000,10,15000,14.5,New Year Peak,25-55,Occasional
+2003,Outdoor Gear,Equipment for outdoor activities and sports,2000,8.5,18000,9.1,Seasonal,20-50,Annual
+3000,Home & Kitchen,Home appliances and kitchen products,NULL,6,140000,5.8,Holiday Peak,25-65,Occasional
+3001,Kitchen Appliances,Cooking and food preparation appliances,3000,5,45000,4.2,Holiday Peak,28-60,Long-term
+3002,Cookware,Pots pans and cooking utensils,3000,7,12000,3.5,Medium,25-55,Long-term
+4000,Furniture & Decor,Furniture and home decoration items,NULL,7,85000,3.2,Moving Season,28-65,Long-term
+4001,Office Furniture,Desks chairs and office equipment,4000,6.5,18000,8.9,Back-to-Office,25-55,Long-term
+4002,Lighting,Lamps and lighting fixtures,4000,8,8000,6.1,Holiday Season,30-60,Long-term

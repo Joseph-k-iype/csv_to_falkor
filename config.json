@@ -1,0 +1,923 @@
+{
+  "database": {
+    "host": "localhost",
+    "port": 6379,
+    "password": null,
+    "decode_responses": true,
+    "connection_timeout": 30,
+    "socket_timeout": 30
+  },
+  "embedding": {
+    "enabled": true,
+    "provider": "openai",
+    "model_name": "text-embedding-3-large",
+    "api_key": "${OPENAI_API_KEY}",
+    "endpoint_url": null,
+    "dimensions": 3072,
+    "batch_size": 50,
+    "max_tokens": 8192,
+    "similarity_function": "cosine",
+    "timeout": 60,
+    "retry_attempts": 3,
+    "retry_delay": 1,
+    "cache_embeddings": true,
+    "vector_fields": [
+      {
+        "entity_pattern": "(p:Product)",
+        "attribute": "p.description_embedding",
+        "M": 16,
+        "efConstruction": 200,
+        "efRuntime": 10
+      },
+      {
+        "entity_pattern": "(r:Review)",
+        "attribute": "r.review_text_embedding",
+        "M": 16,
+        "efConstruction": 200,
+        "efRuntime": 10
+      },
+      {
+        "entity_pattern": "(u:User)",
+        "attribute": "u.profession_embedding",
+        "M": 16,
+        "efConstruction": 200,
+        "efRuntime": 10
+      },
+      {
+        "entity_pattern": "(c:Category)",
+        "attribute": "c.description_embedding",
+        "M": 16,
+        "efConstruction": 200,
+        "efRuntime": 10
+      },
+      {
+        "entity_pattern": "(co:Company)",
+        "attribute": "co.industry_embedding",
+        "M": 16,
+        "efConstruction": 200,
+        "efRuntime": 10
+      }
+    ]
+  },
+  "data_quality": {
+    "enabled": true,
+    "max_null_percentage": 0.5,
+    "duplicate_detection": true,
+    "outlier_detection": true,
+    "data_profiling": true,
+    "quality_threshold": 0.7,
+    "validation_rules": {
+      "required_fields": {
+        "User": ["user_id", "email"],
+        "Product": ["product_id", "name"],
+        "Company": ["company_id", "company_name"],
+        "Order": ["order_id", "user_id"],
+        "Category": ["category_id", "category_name"],
+        "Location": ["location_id", "city", "country"],
+        "Review": ["review_id", "user_id", "product_id"],
+        "Skill": ["skill_id", "skill_name"]
+      },
+      "data_types": {
+        "User.age": "integer",
+        "User.reputation_score": "float",
+        "User.social_influence_score": "float",
+        "Product.price": "float",
+        "Product.rating": "float",
+        "Product.sustainability_score": "float",
+        "Order.total_amount": "float",
+        "Order.shipping_cost": "float",
+        "Location.latitude": "float",
+        "Location.longitude": "float",
+        "Location.population": "integer",
+        "Location.cost_of_living_index": "integer",
+        "Location.gdp_per_capita": "integer",
+        "Company.founded_year": "integer",
+        "Company.employee_count": "integer",
+        "Company.sustainability_rating": "float",
+        "Category.commission_rate": "float",
+        "Category.market_size_millions": "integer",
+        "Category.growth_rate_percent": "float",
+        "Review.rating": "integer",
+        "Review.helpful_votes": "integer",
+        "Review.total_votes": "integer",
+        "Review.sentiment_score": "float",
+        "Review.review_length": "integer"
+      },
+      "value_ranges": {
+        "User.age": { "min": 13, "max": 120 },
+        "Product.rating": { "min": 0.0, "max": 5.0 },
+        "Product.price": { "min": 0.0, "max": 100000.0 },
+        "Review.rating": { "min": 1, "max": 5 },
+        "Review.sentiment_score": { "min": -1.0, "max": 1.0 },
+        "Location.latitude": { "min": -90.0, "max": 90.0 },
+        "Location.longitude": { "min": -180.0, "max": 180.0 }
+      }
+    }
+  },
+  "knowledge_graph_enhancement": {
+    "enabled": true,
+    "auto_relationship_discovery": false,
+    "entity_disambiguation": true,
+    "property_inference": true,
+    "similarity_threshold": 0.85,
+    "cluster_similar_entities": true,
+    "infer_missing_relationships": true,
+    "create_similarity_edges": true,
+    "similarity_edge_threshold": 0.9
+  },
+  "performance_optimization": {
+    "parallel_processing": true,
+    "max_workers": 4,
+    "batch_optimization": true,
+    "memory_optimization": true,
+    "cache_embeddings": true,
+    "connection_pooling": true,
+    "async_operations": true,
+    "bulk_operations": true,
+    "transaction_batching": true,
+    "index_creation_parallel": true
+  },
+  "indexes": [
+    {
+      "label": "User",
+      "properties": [
+        "user_id",
+        "email",
+        "username",
+        "profession",
+        "birth_country"
+      ]
+    },
+    {
+      "label": "Product",
+      "properties": ["product_id", "name", "price", "rating", "release_date"]
+    },
+    {
+      "label": "Company",
+      "properties": [
+        "company_id",
+        "company_name",
+        "stock_symbol",
+        "industry",
+        "founded_year"
+      ]
+    },
+    {
+      "label": "Order",
+      "properties": ["order_id", "order_date", "order_status", "total_amount"]
+    },
+    {
+      "label": "Category",
+      "properties": ["category_id", "category_name", "market_size_millions"]
+    },
+    {
+      "label": "Location",
+      "properties": [
+        "location_id",
+        "city",
+        "country",
+        "population",
+        "economic_tier"
+      ]
+    },
+    {
+      "label": "Review",
+      "properties": [
+        "review_id",
+        "product_id",
+        "user_id",
+        "rating",
+        "review_date"
+      ]
+    },
+    {
+      "label": "Skill",
+      "properties": ["skill_id", "skill_name", "skill_category"]
+    },
+    {
+      "label": "OrderItem",
+      "properties": ["order_item_id", "order_id", "product_id"]
+    }
+  ],
+  "constraints": [
+    {
+      "label": "User",
+      "property": "user_id",
+      "type": "UNIQUE"
+    },
+    {
+      "label": "User",
+      "property": "email",
+      "type": "UNIQUE"
+    },
+    {
+      "label": "Product",
+      "property": "product_id",
+      "type": "UNIQUE"
+    },
+    {
+      "label": "Company",
+      "property": "company_id",
+      "type": "UNIQUE"
+    },
+    {
+      "label": "Company",
+      "property": "stock_symbol",
+      "type": "UNIQUE"
+    },
+    {
+      "label": "Order",
+      "property": "order_id",
+      "type": "UNIQUE"
+    },
+    {
+      "label": "Category",
+      "property": "category_id",
+      "type": "UNIQUE"
+    },
+    {
+      "label": "Location",
+      "property": "location_id",
+      "type": "UNIQUE"
+    },
+    {
+      "label": "Review",
+      "property": "review_id",
+      "type": "UNIQUE"
+    },
+    {
+      "label": "Skill",
+      "property": "skill_id",
+      "type": "UNIQUE"
+    },
+    {
+      "label": "OrderItem",
+      "property": "order_item_id",
+      "type": "UNIQUE"
+    }
+  ],
+  "node_files": [
+    {
+      "file": "users.csv",
+      "node_label": "User",
+      "batch_size": 500,
+      "embedding_fields": ["profession"],
+      "priority": 1,
+      "field_mappings": {
+        "user_id": "user_id",
+        "username": "username",
+        "email": "email",
+        "age": "age",
+        "join_date": "join_date",
+        "account_type": "account_type",
+        "reputation_score": "reputation_score",
+        "profession": "profession",
+        "income_bracket": "income_bracket",
+        "education_level": "education_level",
+        "birth_country": "birth_country",
+        "languages_spoken": "languages_spoken",
+        "personality_type": "personality_type",
+        "spending_pattern": "spending_pattern",
+        "social_influence_score": "social_influence_score"
+      },
+      "data_transformations": {
+        "join_date": "date",
+        "age": "integer",
+        "reputation_score": "float",
+        "social_influence_score": "float"
+      }
+    },
+    {
+      "file": "companies.csv",
+      "node_label": "Company",
+      "batch_size": 500,
+      "embedding_fields": ["industry", "primary_business_model"],
+      "priority": 1,
+      "field_mappings": {
+        "company_id": "company_id",
+        "company_name": "company_name",
+        "industry": "industry",
+        "founded_year": "founded_year",
+        "revenue_bracket": "revenue_bracket",
+        "employee_count": "employee_count",
+        "stock_symbol": "stock_symbol",
+        "sustainability_rating": "sustainability_rating",
+        "market_cap_bracket": "market_cap_bracket",
+        "primary_business_model": "primary_business_model"
+      },
+      "data_transformations": {
+        "founded_year": "integer",
+        "employee_count": "integer",
+        "sustainability_rating": "float"
+      }
+    },
+    {
+      "file": "locations.csv",
+      "node_label": "Location",
+      "batch_size": 500,
+      "embedding_fields": ["primary_industries", "climate_type"],
+      "priority": 1,
+      "field_mappings": {
+        "location_id": "location_id",
+        "city": "city",
+        "state_province": "state_province",
+        "country": "country",
+        "latitude": "latitude",
+        "longitude": "longitude",
+        "population": "population",
+        "timezone": "timezone",
+        "economic_tier": "economic_tier",
+        "cost_of_living_index": "cost_of_living_index",
+        "primary_industries": "primary_industries",
+        "climate_type": "climate_type",
+        "gdp_per_capita": "gdp_per_capita"
+      },
+      "data_transformations": {
+        "latitude": "float",
+        "longitude": "float",
+        "population": "integer",
+        "cost_of_living_index": "integer",
+        "gdp_per_capita": "integer"
+      }
+    },
+    {
+      "file": "categories.csv",
+      "node_label": "Category",
+      "batch_size": 500,
+      "embedding_fields": ["description", "target_age_group"],
+      "priority": 2,
+      "field_mappings": {
+        "category_id": "category_id",
+        "category_name": "category_name",
+        "description": "description",
+        "commission_rate": "commission_rate",
+        "market_size_millions": "market_size_millions",
+        "growth_rate_percent": "growth_rate_percent",
+        "seasonality_factor": "seasonality_factor",
+        "target_age_group": "target_age_group",
+        "purchase_frequency": "purchase_frequency"
+      },
+      "data_transformations": {
+        "commission_rate": "float",
+        "market_size_millions": "integer",
+        "growth_rate_percent": "float"
+      }
+    },
+    {
+      "file": "products.csv",
+      "node_label": "Product",
+      "batch_size": 500,
+      "embedding_fields": [
+        "description",
+        "material_composition",
+        "target_demographic"
+      ],
+      "priority": 3,
+      "field_mappings": {
+        "product_id": "product_id",
+        "name": "name",
+        "description": "description",
+        "price": "price",
+        "stock_quantity": "stock_quantity",
+        "rating": "rating",
+        "release_date": "release_date",
+        "sustainability_score": "sustainability_score",
+        "material_composition": "material_composition",
+        "target_demographic": "target_demographic",
+        "warranty_months": "warranty_months",
+        "complexity_level": "complexity_level"
+      },
+      "data_transformations": {
+        "price": "float",
+        "stock_quantity": "integer",
+        "rating": "float",
+        "release_date": "date",
+        "sustainability_score": "float",
+        "warranty_months": "integer"
+      }
+    },
+    {
+      "file": "orders.csv",
+      "node_label": "Order",
+      "batch_size": 500,
+      "embedding_fields": ["payment_method", "order_source", "device_used"],
+      "priority": 4,
+      "field_mappings": {
+        "order_id": "order_id",
+        "order_date": "order_date",
+        "total_amount": "total_amount",
+        "payment_method": "payment_method",
+        "order_status": "order_status",
+        "delivery_date": "delivery_date",
+        "shipping_cost": "shipping_cost",
+        "discount_applied": "discount_applied",
+        "order_source": "order_source",
+        "device_used": "device_used",
+        "session_duration_minutes": "session_duration_minutes"
+      },
+      "data_transformations": {
+        "order_date": "date",
+        "total_amount": "float",
+        "delivery_date": "date",
+        "shipping_cost": "float",
+        "discount_applied": "integer",
+        "session_duration_minutes": "integer"
+      }
+    },
+    {
+      "file": "order_items.csv",
+      "node_label": "OrderItem",
+      "batch_size": 500,
+      "embedding_fields": ["special_instructions"],
+      "priority": 5,
+      "field_mappings": {
+        "order_item_id": "order_item_id",
+        "quantity": "quantity",
+        "unit_price": "unit_price",
+        "total_price": "total_price",
+        "discount_per_item": "discount_per_item",
+        "gift_wrap": "gift_wrap",
+        "special_instructions": "special_instructions",
+        "return_eligible": "return_eligible",
+        "warranty_extended": "warranty_extended"
+      },
+      "data_transformations": {
+        "quantity": "integer",
+        "unit_price": "float",
+        "total_price": "float",
+        "discount_per_item": "integer"
+      }
+    },
+    {
+      "file": "reviews.csv",
+      "node_label": "Review",
+      "batch_size": 500,
+      "embedding_fields": ["review_text", "review_title"],
+      "priority": 6,
+      "field_mappings": {
+        "review_id": "review_id",
+        "rating": "rating",
+        "review_title": "review_title",
+        "review_text": "review_text",
+        "review_date": "review_date",
+        "verified_purchase": "verified_purchase",
+        "helpful_votes": "helpful_votes",
+        "total_votes": "total_votes",
+        "sentiment_score": "sentiment_score",
+        "review_length": "review_length",
+        "expertise_level": "expertise_level",
+        "response_from_company": "response_from_company"
+      },
+      "data_transformations": {
+        "rating": "integer",
+        "review_date": "date",
+        "verified_purchase": "boolean",
+        "helpful_votes": "integer",
+        "total_votes": "integer",
+        "sentiment_score": "float",
+        "review_length": "integer"
+      }
+    },
+    {
+      "file": "user_skills.csv",
+      "node_label": "Skill",
+      "batch_size": 500,
+      "embedding_fields": ["skill_name", "skill_category"],
+      "priority": 2,
+      "field_mappings": {
+        "skill_id": "skill_id",
+        "skill_name": "skill_name",
+        "proficiency_level": "proficiency_level",
+        "years_experience": "years_experience",
+        "certification": "certification",
+        "skill_category": "skill_category",
+        "last_updated": "last_updated",
+        "relevance_score": "relevance_score"
+      },
+      "data_transformations": {
+        "years_experience": "integer",
+        "last_updated": "date",
+        "relevance_score": "float"
+      }
+    }
+  ],
+  "relationship_files": [
+    {
+      "file": "users.csv",
+      "batch_size": 500,
+      "priority": 1,
+      "relationship": {
+        "type": "LIVES_IN",
+        "source": {
+          "label": "User",
+          "key_field": "user_id",
+          "csv_field": "user_id"
+        },
+        "target": {
+          "label": "Location",
+          "key_field": "location_id",
+          "csv_field": "location_id"
+        },
+        "properties": {
+          "since": "join_date",
+          "relationship_strength": "1.0"
+        }
+      }
+    },
+    {
+      "file": "companies.csv",
+      "batch_size": 500,
+      "priority": 1,
+      "relationship": {
+        "type": "HEADQUARTERED_IN",
+        "source": {
+          "label": "Company",
+          "key_field": "company_id",
+          "csv_field": "company_id"
+        },
+        "target": {
+          "label": "Location",
+          "key_field": "location_id",
+          "csv_field": "headquarters_location_id"
+        },
+        "properties": {
+          "established_year": "founded_year"
+        }
+      }
+    },
+    {
+      "file": "companies.csv",
+      "batch_size": 500,
+      "priority": 1,
+      "relationship": {
+        "type": "HAS_CEO",
+        "source": {
+          "label": "Company",
+          "key_field": "company_id",
+          "csv_field": "company_id"
+        },
+        "target": {
+          "label": "User",
+          "key_field": "user_id",
+          "csv_field": "ceo_user_id"
+        },
+        "properties": {
+          "role": "CEO",
+          "leadership_type": "executive"
+        }
+      }
+    },
+    {
+      "file": "categories.csv",
+      "batch_size": 500,
+      "priority": 2,
+      "relationship": {
+        "type": "SUBCATEGORY_OF",
+        "source": {
+          "label": "Category",
+          "key_field": "category_id",
+          "csv_field": "category_id"
+        },
+        "target": {
+          "label": "Category",
+          "key_field": "category_id",
+          "csv_field": "parent_category_id"
+        },
+        "properties": {
+          "hierarchy_level": "child",
+          "inheritance_factor": "0.8"
+        }
+      }
+    },
+    {
+      "file": "products.csv",
+      "batch_size": 500,
+      "priority": 3,
+      "relationship": {
+        "type": "BELONGS_TO_CATEGORY",
+        "source": {
+          "label": "Product",
+          "key_field": "product_id",
+          "csv_field": "product_id"
+        },
+        "target": {
+          "label": "Category",
+          "key_field": "category_id",
+          "csv_field": "category_id"
+        },
+        "properties": {
+          "classification_confidence": "0.95",
+          "primary_category": "true"
+        }
+      }
+    },
+    {
+      "file": "products.csv",
+      "batch_size": 500,
+      "priority": 3,
+      "relationship": {
+        "type": "MANUFACTURED_BY",
+        "source": {
+          "label": "Product",
+          "key_field": "product_id",
+          "csv_field": "product_id"
+        },
+        "target": {
+          "label": "Company",
+          "key_field": "company_id",
+          "csv_field": "brand_company_id"
+        },
+        "properties": {
+          "brand_relationship": "manufacturer",
+          "quality_rating": "sustainability_score"
+        }
+      }
+    },
+    {
+      "file": "products.csv",
+      "batch_size": 500,
+      "priority": 3,
+      "relationship": {
+        "type": "MANUFACTURED_IN",
+        "source": {
+          "label": "Product",
+          "key_field": "product_id",
+          "csv_field": "product_id"
+        },
+        "target": {
+          "label": "Location",
+          "key_field": "location_id",
+          "csv_field": "manufacturing_location_id"
+        },
+        "properties": {
+          "production_type": "manufacturing",
+          "supply_chain_tier": "primary"
+        }
+      }
+    },
+    {
+      "file": "orders.csv",
+      "batch_size": 500,
+      "priority": 4,
+      "relationship": {
+        "type": "PLACED_BY",
+        "source": {
+          "label": "Order",
+          "key_field": "order_id",
+          "csv_field": "order_id"
+        },
+        "target": {
+          "label": "User",
+          "key_field": "user_id",
+          "csv_field": "user_id"
+        },
+        "properties": {
+          "order_date": "order_date",
+          "total_amount": "total_amount",
+          "customer_type": "account_type"
+        }
+      }
+    },
+    {
+      "file": "orders.csv",
+      "batch_size": 500,
+      "priority": 4,
+      "relationship": {
+        "type": "SHIPPED_TO",
+        "source": {
+          "label": "Order",
+          "key_field": "order_id",
+          "csv_field": "order_id"
+        },
+        "target": {
+          "label": "Location",
+          "key_field": "location_id",
+          "csv_field": "shipping_address_location_id"
+        },
+        "properties": {
+          "shipping_cost": "shipping_cost",
+          "delivery_date": "delivery_date",
+          "shipping_method": "order_source"
+        }
+      }
+    },
+    {
+      "file": "order_items.csv",
+      "batch_size": 500,
+      "priority": 5,
+      "relationship": {
+        "type": "ITEM_IN_ORDER",
+        "source": {
+          "label": "OrderItem",
+          "key_field": "order_item_id",
+          "csv_field": "order_item_id"
+        },
+        "target": {
+          "label": "Order",
+          "key_field": "order_id",
+          "csv_field": "order_id"
+        },
+        "properties": {
+          "quantity": "quantity",
+          "unit_price": "unit_price",
+          "total_price": "total_price",
+          "item_discount": "discount_per_item"
+        }
+      }
+    },
+    {
+      "file": "order_items.csv",
+      "batch_size": 500,
+      "priority": 5,
+      "relationship": {
+        "type": "CONTAINS_PRODUCT",
+        "source": {
+          "label": "OrderItem",
+          "key_field": "order_item_id",
+          "csv_field": "order_item_id"
+        },
+        "target": {
+          "label": "Product",
+          "key_field": "product_id",
+          "csv_field": "product_id"
+        },
+        "properties": {
+          "quantity": "quantity",
+          "unit_price": "unit_price",
+          "purchase_context": "gift_wrap"
+        }
+      }
+    },
+    {
+      "file": "reviews.csv",
+      "batch_size": 500,
+      "priority": 6,
+      "relationship": {
+        "type": "WRITTEN_BY",
+        "source": {
+          "label": "Review",
+          "key_field": "review_id",
+          "csv_field": "review_id"
+        },
+        "target": {
+          "label": "User",
+          "key_field": "user_id",
+          "csv_field": "user_id"
+        },
+        "properties": {
+          "review_date": "review_date",
+          "verified_purchase": "verified_purchase",
+          "expertise_level": "expertise_level"
+        }
+      }
+    },
+    {
+      "file": "reviews.csv",
+      "batch_size": 500,
+      "priority": 6,
+      "relationship": {
+        "type": "REVIEWS",
+        "source": {
+          "label": "Review",
+          "key_field": "review_id",
+          "csv_field": "review_id"
+        },
+        "target": {
+          "label": "Product",
+          "key_field": "product_id",
+          "csv_field": "product_id"
+        },
+        "properties": {
+          "rating": "rating",
+          "sentiment_score": "sentiment_score",
+          "helpful_votes": "helpful_votes",
+          "review_length": "review_length"
+        }
+      }
+    },
+    {
+      "file": "reviews.csv",
+      "batch_size": 500,
+      "priority": 6,
+      "relationship": {
+        "type": "REVIEW_OF_ORDER",
+        "source": {
+          "label": "Review",
+          "key_field": "review_id",
+          "csv_field": "review_id"
+        },
+        "target": {
+          "label": "Order",
+          "key_field": "order_id",
+          "csv_field": "order_id"
+        },
+        "properties": {
+          "review_context": "post_purchase",
+          "order_satisfaction": "rating"
+        }
+      }
+    },
+    {
+      "file": "user_skills.csv",
+      "batch_size": 500,
+      "priority": 7,
+      "relationship": {
+        "type": "HAS_SKILL",
+        "source": {
+          "label": "User",
+          "key_field": "user_id",
+          "csv_field": "user_id"
+        },
+        "target": {
+          "label": "Skill",
+          "key_field": "skill_id",
+          "csv_field": "skill_id"
+        },
+        "properties": {
+          "proficiency_level": "proficiency_level",
+          "years_experience": "years_experience",
+          "certification": "certification",
+          "relevance_score": "relevance_score",
+          "last_updated": "last_updated"
+        }
+      }
+    },
+    {
+      "file": "company_relationships.csv",
+      "batch_size": 500,
+      "priority": 8,
+      "relationship": {
+        "type": "BUSINESS_RELATIONSHIP",
+        "source": {
+          "label": "Company",
+          "key_field": "company_id",
+          "csv_field": "company_id_1"
+        },
+        "target": {
+          "label": "Company",
+          "key_field": "company_id",
+          "csv_field": "company_id_2"
+        },
+        "properties": {
+          "relationship_type": "relationship_type",
+          "established_date": "established_date",
+          "contract_value": "contract_value",
+          "relationship_strength": "relationship_strength",
+          "exclusivity_level": "exclusivity_level",
+          "geographic_scope": "geographic_scope"
+        }
+      }
+    }
+  ],
+  "advanced_features": {
+    "similarity_search": {
+      "enabled": true,
+      "default_similarity_threshold": 0.8,
+      "max_results": 10,
+      "create_similarity_relationships": true,
+      "similarity_relationship_type": "SIMILAR_TO"
+    },
+    "recommendation_engine": {
+      "enabled": true,
+      "collaborative_filtering": true,
+      "content_based_filtering": true,
+      "hybrid_approach": true,
+      "min_similarity_score": 0.7
+    },
+    "anomaly_detection": {
+      "enabled": true,
+      "statistical_methods": true,
+      "ml_based_detection": false,
+      "anomaly_threshold": 2.0
+    },
+    "graph_analytics": {
+      "centrality_measures": true,
+      "community_detection": true,
+      "path_analysis": true,
+      "clustering": true,
+      "enable_metrics": true
+    },
+    "auto_relationship_inference": {
+      "enabled": true,
+      "confidence_threshold": 0.85,
+      "create_inferred_relationships": true,
+      "inferred_relationship_prefix": "INFERRED_"
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "enhanced_graph_converter.log",
+    "max_size": "10MB",
+    "backup_count": 5,
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  },
+  "reporting": {
+    "enabled": true,
+    "output_format": "json",
+    "include_statistics": true,
+    "include_quality_metrics": true,
+    "include_performance_metrics": true,
+    "save_intermediate_reports": true,
+    "report_frequency": "batch"
+  }
+}

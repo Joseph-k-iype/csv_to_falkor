@@ -1,0 +1,11 @@
+relationship_id,company_id_1,company_id_2,relationship_type,established_date,contract_value,relationship_strength,exclusivity_level,geographic_scope
+701,201,205,Supplier,2020-03-15,2500000,High,Non-Exclusive,Global
+702,202,205,Technology Partner,2021-06-20,8000000,Very High,Exclusive,North America
+703,203,206,Distributor,2019-11-10,1200000,Medium,Non-Exclusive,USA
+704,204,208,Joint Venture,2022-01-05,5000000,Very High,Exclusive,Global
+705,205,202,OEM Partner,2021-08-30,15000000,Very High,Semi-Exclusive,Global
+706,206,210,Sustainability Partner,2023-02-14,300000,Medium,Non-Exclusive,North America
+707,207,209,Design Collaboration,2022-09-18,800000,High,Non-Exclusive,Europe
+708,208,204,Merger Target,2023-03-22,25000000,Very High,Exclusive,Global
+709,209,201,Component Supplier,2020-07-11,1800000,High,Non-Exclusive,North America
+710,210,206,Research Partnership,2023-01-08,450000,Medium,Non-Exclusive,Global

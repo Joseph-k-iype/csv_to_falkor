@@ -1,0 +1,11 @@
+product_id,name,description,price,brand_company_id,category_id,stock_quantity,rating,release_date,manufacturing_location_id,sustainability_score,material_composition,target_demographic,warranty_months,complexity_level
+101,Wireless Headphones Pro,Premium bluetooth headphones with noise cancellation,299.99,201,1001,150,4.6,2023-01-01,101,8.2,Aluminum 40% Plastic 35% Electronics 25%,Tech Enthusiasts,24,Advanced
+102,Quantum Smartphone X1,Latest flagship smartphone with AI capabilities,1299.99,202,1002,75,4.8,2023-02-15,105,7.1,Glass 30% Metal 25% Electronics 45%,Premium Users,12,Expert
+103,Marathon Running Shoes,Professional marathon running shoes with carbon plate,189.99,203,2001,250,4.4,2023-01-20,103,9,Synthetic 60% Rubber 30% Foam 10%,Athletes,6,Intermediate
+104,Smart Coffee Maker,IoT-enabled automatic drip coffee maker,149.99,204,3001,100,4.2,2023-03-01,104,6.8,Steel 50% Plastic 30% Electronics 20%,Home Enthusiasts,18,Beginner
+105,Workstation Laptop Elite,High-performance laptop for professional workflows,2499.99,205,1003,45,4.9,2023-02-01,105,8.5,Aluminum 45% Electronics 40% Plastic 15%,Professionals,36,Expert
+106,Eco Yoga Mat Premium,Sustainable yoga mat made from natural materials,79.99,206,2002,300,4.5,2023-01-10,106,9.8,Cork 70% Natural Rubber 30%,Wellness Focused,12,Beginner
+107,Executive Desk System,Modular executive desk with smart features,899.99,207,4001,25,4.3,2023-03-15,107,7.5,Wood 60% Metal 25% Electronics 15%,Business Professionals,60,Intermediate
+108,Chef's Pan Collection,Professional non-stick pan set for chefs,159.99,208,3002,180,4.1,2023-01-25,108,8,Steel 70% Ceramic Coating 20% Handle 10%,Cooking Enthusiasts,24,Intermediate
+109,Smart Desk Lamp AI,AI-powered adjustable desk lamp with wellness features,119.99,209,4002,120,4.7,2023-02-10,109,8.9,Metal 50% Electronics 30% Plastic 20%,Knowledge Workers,18,Advanced
+110,Hydration Bottle Pro,Smart water bottle with temperature control and tracking,49.99,210,2003,500,4.4,2023-01-05,110,9.7,Steel 80% Electronics 15% Plastic 5%,Active Lifestyle,12,Beginner
