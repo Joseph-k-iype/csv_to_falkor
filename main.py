@@ -1,18 +1,10 @@
 #!/usr/bin/env python3
 """
-Enhanced FalkorDB CSV to Knowledge Graph Converter
-A streamlined tool for creating rich knowledge graphs from CSV data with API-based vector embeddings.
-
-Features:
-- Vector embedding support (OpenAI, UAE via API, custom endpoints)
-- Advanced data quality validation
-- Flexible embedding configuration
-- Knowledge graph enrichment
-- Performance optimizations
-- Comprehensive analytics and profiling
+FalkorDB CSV to Knowledge Graph Converter with OpenAI Embeddings
+A streamlined tool for creating knowledge graphs from CSV data with OpenAI vector embeddings.
 
 Usage:
-    python enhanced_graph_converter.py <graph_name> <csv_directory_path> <config_file_path>
+    python graph_converter.py <graph_name> <csv_directory_path> <config_file_path>
 """
 
 import os
@@ -21,19 +13,15 @@ import json
 import time
 import logging
 import argparse
-import asyncio
-import aiohttp
-import hashlib
-import threading
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple, Union
+from typing import Dict, List, Any, Optional
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 
 import pandas as pd
 import numpy as np
-import openai
+from openai import OpenAI
+
 try:
     from falkordb import FalkorDB
     import redis
@@ -46,33 +34,46 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('enhanced_graph_converter.log'),
+        logging.FileHandler('graph_converter.log'),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
 
-@dataclass
-class EmbeddingConfig:
-    """Configuration for embedding models and endpoints."""
-    provider: str  # 'openai', 'uae', 'custom'
-    model_name: str
-    endpoint_url: Optional[str] = None
-    api_key: Optional[str] = None
-    dimensions: Optional[int] = None
-    batch_size: int = 100
-    max_tokens: int = 8192
-    similarity_function: str = 'cosine'  # 'cosine' or 'euclidean'
-    enabled: bool = True
+def convert_to_json_serializable(obj):
+    """Convert numpy types and other non-JSON serializable types to JSON serializable types."""
+    if isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, (np.bool_, bool)):
+        return bool(obj)
+    elif isinstance(obj, dict):
+        return {k: convert_to_json_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_to_json_serializable(item) for item in obj]
+    elif pd.isna(obj):
+        return None
+    else:
+        return obj
 
-@dataclass
-class EntityLinkingConfig:
-    """Configuration for entity linking and disambiguation."""
-    enabled: bool = True
-    confidence_threshold: float = 0.8
-    max_candidates: int = 5
-    use_fuzzy_matching: bool = True
-    external_knowledge_base: Optional[str] = None
+class JSONEncoder(json.JSONEncoder):
+    """Custom JSON encoder to handle numpy types and other non-serializable objects."""
+    
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, (np.bool_, bool)):
+            return bool(obj)
+        elif pd.isna(obj):
+            return None
+        return super().default(obj)
 
 @dataclass
 class DataQualityConfig:
@@ -82,239 +83,6 @@ class DataQualityConfig:
     duplicate_detection: bool = True
     outlier_detection: bool = True
     data_profiling: bool = True
-
-class EmbeddingProvider:
-    """Base class for embedding providers."""
-    
-    def __init__(self, config: EmbeddingConfig):
-        self.config = config
-    
-    async def embed_texts(self, texts: List[str]) -> List[List[float]]:
-        """Generate embeddings for a list of texts."""
-        raise NotImplementedError
-    
-    def embed_text(self, text: str) -> List[float]:
-        """Generate embedding for a single text."""
-        raise NotImplementedError
-
-class OpenAIEmbeddingProvider(EmbeddingProvider):
-    """OpenAI embedding provider supporting text-embedding-3-large and text-embedding-3-small."""
-    
-    def __init__(self, config: EmbeddingConfig):
-        super().__init__(config)
-        if not config.api_key:
-            config.api_key = os.getenv('OPENAI_API_KEY')
-        if not config.api_key:
-            raise ValueError("OpenAI API key not provided")
-        
-        self.client = openai.OpenAI(api_key=config.api_key)
-        
-        # Set default dimensions based on model
-        if not config.dimensions:
-            if 'text-embedding-3-large' in config.model_name:
-                config.dimensions = 3072
-            elif 'text-embedding-3-small' in config.model_name:
-                config.dimensions = 1536
-            else:
-                config.dimensions = 1536
-    
-    async def embed_texts(self, texts: List[str]) -> List[List[float]]:
-        """Generate embeddings for multiple texts using OpenAI API."""
-        embeddings = []
-        
-        # Process in batches
-        for i in range(0, len(texts), self.config.batch_size):
-            batch = texts[i:i + self.config.batch_size]
-            
-            try:
-                response = self.client.embeddings.create(
-                    input=batch,
-                    model=self.config.model_name,
-                    dimensions=self.config.dimensions
-                )
-                
-                batch_embeddings = [data.embedding for data in response.data]
-                embeddings.extend(batch_embeddings)
-                
-            except Exception as e:
-                logger.error(f"Error generating OpenAI embeddings: {e}")
-                # Return zero vectors for failed batches
-                embeddings.extend([[0.0] * self.config.dimensions] * len(batch))
-        
-        return embeddings
-    
-    def embed_text(self, text: str) -> List[float]:
-        """Generate embedding for a single text."""
-        try:
-            response = self.client.embeddings.create(
-                input=[text],
-                model=self.config.model_name,
-                dimensions=self.config.dimensions
-            )
-            return response.data[0].embedding
-        except Exception as e:
-            logger.error(f"Error generating OpenAI embedding: {e}")
-            return [0.0] * self.config.dimensions
-
-class UAEEmbeddingProvider(EmbeddingProvider):
-    """UAE (Universal Angle Embedding) provider via API endpoint."""
-    
-    def __init__(self, config: EmbeddingConfig):
-        super().__init__(config)
-        if not config.endpoint_url:
-            # Default UAE API endpoint (you can customize this)
-            config.endpoint_url = "https://api.uae-embeddings.com/embed"
-        
-        # Set default dimensions for UAE models
-        if not config.dimensions:
-            if 'UAE-Large-V1' in config.model_name:
-                config.dimensions = 1024
-            else:
-                config.dimensions = 768
-    
-    async def embed_texts(self, texts: List[str]) -> List[List[float]]:
-        """Generate embeddings using UAE API endpoint."""
-        async with aiohttp.ClientSession() as session:
-            embeddings = []
-            
-            for i in range(0, len(texts), self.config.batch_size):
-                batch = texts[i:i + self.config.batch_size]
-                
-                payload = {
-                    'texts': batch,
-                    'model': self.config.model_name
-                }
-                
-                headers = {'Content-Type': 'application/json'}
-                if self.config.api_key:
-                    headers['Authorization'] = f'Bearer {self.config.api_key}'
-                
-                try:
-                    async with session.post(
-                        self.config.endpoint_url,
-                        json=payload,
-                        headers=headers
-                    ) as response:
-                        if response.status == 200:
-                            result = await response.json()
-                            batch_embeddings = result.get('embeddings', [])
-                            embeddings.extend(batch_embeddings)
-                        else:
-                            logger.error(f"UAE API error: {response.status}")
-                            embeddings.extend([[0.0] * self.config.dimensions] * len(batch))
-                            
-                except Exception as e:
-                    logger.error(f"Error calling UAE API: {e}")
-                    embeddings.extend([[0.0] * self.config.dimensions] * len(batch))
-            
-            return embeddings
-    
-    def embed_text(self, text: str) -> List[float]:
-        """Generate embedding for a single text using UAE API."""
-        import requests
-        
-        payload = {
-            'texts': [text],
-            'model': self.config.model_name
-        }
-        
-        headers = {'Content-Type': 'application/json'}
-        if self.config.api_key:
-            headers['Authorization'] = f'Bearer {self.config.api_key}'
-        
-        try:
-            response = requests.post(
-                self.config.endpoint_url,
-                json=payload,
-                headers=headers
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                return result.get('embeddings', [[0.0] * self.config.dimensions])[0]
-            else:
-                logger.error(f"UAE API error: {response.status_code}")
-                return [0.0] * self.config.dimensions
-                
-        except Exception as e:
-            logger.error(f"Error calling UAE API: {e}")
-            return [0.0] * self.config.dimensions
-
-class CustomEmbeddingProvider(EmbeddingProvider):
-    """Custom embedding provider for external APIs."""
-    
-    def __init__(self, config: EmbeddingConfig):
-        super().__init__(config)
-        if not config.endpoint_url:
-            raise ValueError("Custom embedding provider requires endpoint_url")
-    
-    async def embed_texts(self, texts: List[str]) -> List[List[float]]:
-        """Generate embeddings using custom API endpoint."""
-        async with aiohttp.ClientSession() as session:
-            embeddings = []
-            
-            for i in range(0, len(texts), self.config.batch_size):
-                batch = texts[i:i + self.config.batch_size]
-                
-                payload = {
-                    'texts': batch,
-                    'model': self.config.model_name
-                }
-                
-                headers = {}
-                if self.config.api_key:
-                    headers['Authorization'] = f'Bearer {self.config.api_key}'
-                
-                try:
-                    async with session.post(
-                        self.config.endpoint_url,
-                        json=payload,
-                        headers=headers
-                    ) as response:
-                        if response.status == 200:
-                            result = await response.json()
-                            batch_embeddings = result.get('embeddings', [])
-                            embeddings.extend(batch_embeddings)
-                        else:
-                            logger.error(f"Custom API error: {response.status}")
-                            embeddings.extend([[0.0] * self.config.dimensions] * len(batch))
-                            
-                except Exception as e:
-                    logger.error(f"Error calling custom embedding API: {e}")
-                    embeddings.extend([[0.0] * self.config.dimensions] * len(batch))
-            
-            return embeddings
-    
-    def embed_text(self, text: str) -> List[float]:
-        """Generate embedding for a single text using custom API."""
-        import requests
-        
-        payload = {
-            'texts': [text],
-            'model': self.config.model_name
-        }
-        
-        headers = {}
-        if self.config.api_key:
-            headers['Authorization'] = f'Bearer {self.config.api_key}'
-        
-        try:
-            response = requests.post(
-                self.config.endpoint_url,
-                json=payload,
-                headers=headers
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                return result.get('embeddings', [[0.0] * self.config.dimensions])[0]
-            else:
-                logger.error(f"Custom API error: {response.status_code}")
-                return [0.0] * self.config.dimensions
-                
-        except Exception as e:
-            logger.error(f"Error calling custom embedding API: {e}")
-            return [0.0] * self.config.dimensions
 
 class DataQualityAnalyzer:
     """Analyzes and validates data quality."""
@@ -337,46 +105,137 @@ class DataQualityAnalyzer:
         if not self.config.enabled:
             return report
         
-        # Calculate null percentages
-        for col in df.columns:
-            null_pct = df[col].isnull().sum() / len(df)
-            report['null_percentages'][col] = null_pct
+        try:
+            # Calculate null percentages
+            for col in df.columns:
+                null_pct = df[col].isnull().sum() / len(df) if len(df) > 0 else 0
+                report['null_percentages'][col] = convert_to_json_serializable(null_pct)
+            
+            # Check for duplicates
+            if self.config.duplicate_detection:
+                report['duplicate_rows'] = convert_to_json_serializable(df.duplicated().sum())
+            
+            # Data type analysis
+            for col in df.columns:
+                report['data_types'][col] = str(df[col].dtype)
+            
+            # Outlier detection for numeric columns
+            if self.config.outlier_detection:
+                numeric_cols = df.select_dtypes(include=[np.number]).columns
+                for col in numeric_cols:
+                    if len(df[col].dropna()) > 0:
+                        Q1 = df[col].quantile(0.25)
+                        Q3 = df[col].quantile(0.75)
+                        IQR = Q3 - Q1
+                        if IQR > 0:
+                            outliers = df[(df[col] < (Q1 - 1.5 * IQR)) | (df[col] > (Q3 + 1.5 * IQR))]
+                            report['outliers'][col] = convert_to_json_serializable(len(outliers))
+                        else:
+                            report['outliers'][col] = 0
+            
+            # Calculate overall quality score
+            avg_null_pct = np.mean(list(report['null_percentages'].values())) if report['null_percentages'] else 0
+            duplicate_pct = report['duplicate_rows'] / len(df) if len(df) > 0 else 0
+            
+            quality_score = max(0, 1.0 - avg_null_pct - duplicate_pct)
+            report['quality_score'] = convert_to_json_serializable(quality_score)
+            
+        except Exception as e:
+            logger.error(f"Error analyzing dataframe: {e}")
+            report['error'] = str(e)
         
-        # Check for duplicates
-        if self.config.duplicate_detection:
-            report['duplicate_rows'] = df.duplicated().sum()
-        
-        # Data type analysis
-        for col in df.columns:
-            report['data_types'][col] = str(df[col].dtype)
-        
-        # Outlier detection for numeric columns
-        if self.config.outlier_detection:
-            numeric_cols = df.select_dtypes(include=[np.number]).columns
-            for col in numeric_cols:
-                Q1 = df[col].quantile(0.25)
-                Q3 = df[col].quantile(0.75)
-                IQR = Q3 - Q1
-                outliers = df[(df[col] < (Q1 - 1.5 * IQR)) | (df[col] > (Q3 + 1.5 * IQR))]
-                report['outliers'][col] = len(outliers)
-        
-        # Calculate overall quality score
-        avg_null_pct = np.mean(list(report['null_percentages'].values()))
-        duplicate_pct = report['duplicate_rows'] / len(df) if len(df) > 0 else 0
-        
-        quality_score = max(0, 1.0 - avg_null_pct - duplicate_pct)
-        report['quality_score'] = quality_score
-        
-        return report
+        # Convert entire report to ensure JSON serialization
+        return convert_to_json_serializable(report)
 
-class EnhancedGraphConverter:
-    """Enhanced GraphConverter with vector embeddings and knowledge graph features."""
+class OpenAIEmbeddingProvider:
+    """OpenAI embedding provider supporting text-embedding-3-large and text-embedding-3-small."""
+    
+    def __init__(self, model_name: str, api_key: str, dimensions: Optional[int] = None, batch_size: int = 100):
+        self.model_name = model_name
+        self.batch_size = batch_size
+        
+        try:
+            self.client = OpenAI(api_key=api_key)
+            logger.info(f"OpenAI client initialized with model: {model_name}")
+        except Exception as e:
+            logger.error(f"Failed to initialize OpenAI client: {e}")
+            raise
+        
+        # Set default dimensions based on model
+        if dimensions:
+            self.dimensions = dimensions
+        elif 'text-embedding-3-large' in model_name:
+            self.dimensions = 3072
+        elif 'text-embedding-3-small' in model_name:
+            self.dimensions = 1536
+        else:
+            self.dimensions = 1536
+        
+        logger.info(f"Using {self.dimensions} dimensions for embeddings")
+    
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
+        """Generate embeddings for multiple texts using OpenAI API."""
+        embeddings = []
+        total_batches = (len(texts) + self.batch_size - 1) // self.batch_size
+        
+        logger.info(f"Generating embeddings for {len(texts)} texts in {total_batches} batches")
+        
+        # Process in batches
+        for i in range(0, len(texts), self.batch_size):
+            batch_num = i // self.batch_size + 1
+            batch = texts[i:i + self.batch_size]
+            
+            try:
+                logger.debug(f"Processing batch {batch_num}/{total_batches} ({len(batch)} texts)")
+                
+                response = self.client.embeddings.create(
+                    input=batch,
+                    model=self.model_name,
+                    dimensions=self.dimensions
+                )
+                
+                batch_embeddings = [data.embedding for data in response.data]
+                embeddings.extend(batch_embeddings)
+                
+                logger.debug(f"Successfully processed batch {batch_num}/{total_batches}")
+                
+            except Exception as e:
+                logger.error(f"Error generating OpenAI embeddings for batch {batch_num}: {e}")
+                # Return zero vectors for failed batches
+                embeddings.extend([[0.0] * self.dimensions] * len(batch))
+        
+        logger.info(f"Generated {len(embeddings)} embeddings successfully")
+        return embeddings
+    
+    def embed_text(self, text: str) -> List[float]:
+        """Generate embedding for a single text."""
+        try:
+            response = self.client.embeddings.create(
+                input=[text],
+                model=self.model_name,
+                dimensions=self.dimensions
+            )
+            return response.data[0].embedding
+        except Exception as e:
+            logger.error(f"Error generating OpenAI embedding: {e}")
+            return [0.0] * self.dimensions
+
+class GraphConverter:
+    """Main class for converting CSV data to FalkorDB graph database with OpenAI embeddings."""
     
     def __init__(self, graph_name: str, csv_path: str, config_path: str):
-        """Initialize the Enhanced GraphConverter."""
+        """Initialize the GraphConverter with configuration."""
+        logger.info("Initializing GraphConverter...")
+        
         self.graph_name = graph_name
         self.csv_path = Path(csv_path)
         self.config_path = Path(config_path)
+        
+        logger.info(f"Graph name: {graph_name}")
+        logger.info(f"CSV path: {csv_path}")
+        logger.info(f"Config path: {config_path}")
+        
+        # Load configuration
         self.config = self._load_config()
         
         # Initialize components
@@ -394,17 +253,24 @@ class EnhancedGraphConverter:
             'relationships_created': 0,
             'embeddings_created': 0,
             'vector_indexes_created': 0,
+            'indexes_created': 0,
+            'constraints_created': 0,
             'processing_time': 0,
             'files_processed': 0,
             'data_quality_reports': {},
             'errors': []
         }
         
+        # Setup database and embedding provider
         self._setup_database()
         self._setup_embedding_provider()
+        
+        logger.info("GraphConverter initialization completed")
     
     def _load_config(self) -> Dict:
         """Load and validate configuration."""
+        logger.info("Loading configuration...")
+        
         try:
             with open(self.config_path, 'r') as f:
                 config = json.load(f)
@@ -413,26 +279,37 @@ class EnhancedGraphConverter:
             if 'embedding' not in config:
                 config['embedding'] = {
                     'enabled': False,
-                    'provider': 'openai',
                     'model_name': 'text-embedding-3-small'
                 }
             
             if 'data_quality' not in config:
                 config['data_quality'] = {
                     'enabled': True,
-                    'validation': True,
-                    'profiling': True
+                    'max_null_percentage': 0.5,
+                    'duplicate_detection': True,
+                    'outlier_detection': True,
+                    'data_profiling': True
                 }
             
-            logger.info(f"Configuration loaded from {self.config_path}")
+            logger.info(f"Configuration loaded successfully from {self.config_path}")
+            logger.info(f"Embedding enabled: {config.get('embedding', {}).get('enabled', False)}")
+            
             return config
             
+        except FileNotFoundError:
+            logger.error(f"Configuration file not found: {self.config_path}")
+            raise
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON in configuration file: {e}")
+            raise
         except Exception as e:
             logger.error(f"Error loading config: {e}")
             raise
     
     def _setup_database(self):
         """Initialize FalkorDB connection."""
+        logger.info("Setting up database connection...")
+        
         try:
             db_config = self.config.get('database', {})
             
@@ -444,216 +321,65 @@ class EnhancedGraphConverter:
             if db_config.get('password'):
                 connection_params['password'] = db_config.get('password')
             
+            logger.info(f"Connecting to FalkorDB at {connection_params['host']}:{connection_params['port']}")
+            
             self.db = FalkorDB(**connection_params)
             self.graph = self.db.select_graph(self.graph_name)
             self.redis_client = redis.Redis(**connection_params, decode_responses=True)
             
-            logger.info(f"Connected to FalkorDB: {self.graph_name}")
+            # Test connection
+            test_result = self.graph.query("RETURN 1")
+            logger.info(f"Database connection successful - Graph: {self.graph_name}")
             
         except Exception as e:
-            logger.error(f"Database connection error: {e}")
+            logger.error(f"Database connection failed: {e}")
+            logger.error("Make sure FalkorDB is running on the specified host and port")
             raise
     
     def _setup_embedding_provider(self):
-        """Initialize embedding provider based on configuration."""
+        """Initialize OpenAI embedding provider."""
         embedding_config = self.config.get('embedding', {})
         
         if not embedding_config.get('enabled', False):
             logger.info("Embedding support disabled")
             return
         
+        logger.info("Setting up OpenAI embedding provider...")
+        
         try:
-            provider = embedding_config.get('provider', 'openai').lower()
-            config = EmbeddingConfig(**embedding_config)
+            api_key = embedding_config.get('api_key')
+            if not api_key:
+                api_key = os.getenv('OPENAI_API_KEY')
             
-            if provider == 'openai':
-                self.embedding_provider = OpenAIEmbeddingProvider(config)
-            elif provider == 'uae':
-                self.embedding_provider = UAEEmbeddingProvider(config)
-            elif provider == 'custom':
-                self.embedding_provider = CustomEmbeddingProvider(config)
-            else:
-                raise ValueError(f"Unsupported embedding provider: {provider}")
+            if not api_key:
+                raise ValueError("OpenAI API key not provided in config or environment variable OPENAI_API_KEY")
             
-            logger.info(f"Initialized {provider} embedding provider with model: {config.model_name}")
+            # Mask API key for logging
+            masked_key = api_key[:8] + "..." + api_key[-4:] if len(api_key) > 12 else "***"
+            logger.info(f"Using API key: {masked_key}")
+            
+            self.embedding_provider = OpenAIEmbeddingProvider(
+                model_name=embedding_config.get('model_name', 'text-embedding-3-small'),
+                api_key=api_key,
+                dimensions=embedding_config.get('dimensions'),
+                batch_size=embedding_config.get('batch_size', 100)
+            )
+            
+            logger.info("OpenAI embedding provider setup completed")
             
         except Exception as e:
-            logger.error(f"Error setting up embedding provider: {e}")
+            logger.error(f"Error setting up OpenAI embedding provider: {e}")
             self.embedding_provider = None
     
-    def _create_vector_indexes(self):
-        """Create vector indexes for embeddings."""
-        if not self.embedding_provider:
-            return
-        
-        vector_fields = self.config.get('embedding', {}).get('vector_fields', [])
-        
-        for field_config in vector_fields:
-            try:
-                entity_pattern = field_config['entity_pattern']
-                attribute = field_config['attribute']
-                
-                options = {
-                    'dimension': self.embedding_provider.config.dimensions,
-                    'similarityFunction': self.embedding_provider.config.similarity_function,
-                    'M': field_config.get('M', 16),
-                    'efConstruction': field_config.get('efConstruction', 200),
-                    'efRuntime': field_config.get('efRuntime', 10)
-                }
-                
-                query = f"""
-                CREATE VECTOR INDEX FOR {entity_pattern} ON ({attribute}) 
-                OPTIONS {json.dumps(options).replace('"', "'")}
-                """
-                
-                self.graph.query(query)
-                self.stats['vector_indexes_created'] += 1
-                logger.info(f"Created vector index: {entity_pattern} ON {attribute}")
-                
-            except Exception as e:
-                error_msg = str(e).lower()
-                if "already exists" in error_msg:
-                    logger.debug(f"Vector index already exists: {entity_pattern}")
-                else:
-                    logger.error(f"Error creating vector index: {e}")
-    
-    async def _generate_embeddings_for_text_fields(self, df: pd.DataFrame, text_fields: List[str]) -> Dict[str, List[List[float]]]:
-        """Generate embeddings for specified text fields."""
-        if not self.embedding_provider:
-            return {}
-        
-        embeddings = {}
-        
-        for field in text_fields:
-            if field not in df.columns:
-                continue
-            
-            texts = df[field].fillna('').astype(str).tolist()
-            
-            try:
-                field_embeddings = await self.embedding_provider.embed_texts(texts)
-                embeddings[field] = field_embeddings
-                logger.info(f"Generated {len(field_embeddings)} embeddings for field: {field}")
-                
-            except Exception as e:
-                logger.error(f"Error generating embeddings for field {field}: {e}")
-                embeddings[field] = [[0.0] * self.embedding_provider.config.dimensions] * len(texts)
-        
-        return embeddings
-    
-    def _process_enhanced_nodes(self, file_config: Dict) -> int:
-        """Process nodes with enhanced features including embeddings and semantic analysis."""
-        csv_file = self.csv_path / file_config['file']
-        
-        if not csv_file.exists():
-            logger.error(f"CSV file not found: {csv_file}")
-            return 0
-        
-        try:
-            df = pd.read_csv(csv_file)
-            logger.info(f"Processing {len(df)} rows from {csv_file}")
-            
-            # Data quality analysis
-            quality_report = self.data_quality_analyzer.analyze_dataframe(df)
-            self.stats['data_quality_reports'][file_config['file']] = quality_report
-            logger.info(f"Data quality score for {csv_file}: {quality_report['quality_score']:.2f}")
-            
-            # Generate embeddings if configured
-            embeddings = {}
-            embedding_fields = file_config.get('embedding_fields', [])
-            if embedding_fields and self.embedding_provider:
-                embeddings = asyncio.run(
-                    self._generate_embeddings_for_text_fields(df, embedding_fields)
-                )
-            
-            node_label = file_config['node_label']
-            field_mappings = file_config['field_mappings']
-            batch_size = file_config.get('batch_size', 1000)
-            
-            nodes_created = 0
-            
-            # Process in batches
-            for i in range(0, len(df), batch_size):
-                batch = df.iloc[i:i + batch_size]
-                
-                create_statements = []
-                for idx, (_, row) in enumerate(batch.iterrows()):
-                    actual_idx = i + idx
-                    
-                    # Build basic properties
-                    properties = self._build_cypher_properties(row, field_mappings)
-                    
-                    # Add embeddings as vector properties
-                    for field, field_embeddings in embeddings.items():
-                        if actual_idx < len(field_embeddings):
-                            embedding = field_embeddings[actual_idx]
-                            vector_field_name = f"{field}_embedding"
-                            vector_str = f"vecf32({json.dumps(embedding)})"
-                            properties = properties[:-1] + f", {vector_field_name}: {vector_str}" + "}"
-                    
-                    create_statements.append(f"CREATE (n{nodes_created}:{node_label} {properties})")
-                    nodes_created += 1
-                
-                # Execute batch
-                if create_statements:
-                    query = " ".join(create_statements)
-                    try:
-                        self.graph.query(query)
-                        logger.debug(f"Batch created {len(create_statements)} {node_label} nodes")
-                    except Exception as e:
-                        logger.error(f"Error creating batch of {node_label} nodes: {e}")
-                        self.stats['errors'].append(f"Node creation error in {csv_file}: {e}")
-            
-            # Update embedding stats
-            total_embeddings = sum(len(emb) for emb in embeddings.values())
-            self.stats['embeddings_created'] += total_embeddings
-            
-            logger.info(f"Created {nodes_created} {node_label} nodes with {total_embeddings} embeddings")
-            return nodes_created
-            
-        except Exception as e:
-            logger.error(f"Error processing enhanced nodes from {csv_file}: {e}")
-            self.stats['errors'].append(f"Enhanced node processing error {csv_file}: {e}")
-            return 0
-    
-    def _build_cypher_properties(self, row: pd.Series, field_mappings: Dict, embeddings: Dict = None) -> str:
-        """Build Cypher property string with optional embeddings."""
-        properties = []
-        
-        for csv_field, graph_field in field_mappings.items():
-            if csv_field in row.index:
-                value = self._sanitize_value(row[csv_field])
-                if value is not None:
-                    if isinstance(value, str):
-                        properties.append(f"{graph_field}: '{value}'")
-                    else:
-                        properties.append(f"{graph_field}: {value}")
-        
-        return "{" + ", ".join(properties) + "}"
-    
-    def _sanitize_value(self, value: Any) -> Any:
-        """Sanitize values for Cypher queries."""
-        if pd.isna(value) or value is None:
-            return None
-        
-        if isinstance(value, str):
-            # Enhanced string sanitization
-            value = value.replace("'", "\\'").replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r')
-            return value
-        
-        if isinstance(value, (int, float)):
-            return value
-        
-        if isinstance(value, bool):
-            return str(value).lower()
-        
-        return str(value).replace("'", "\\'").replace('"', '\\"')
-    
-    def _create_enhanced_indexes_and_constraints(self):
+    def _create_indexes_and_constraints(self):
         """Create indexes, constraints, and vector indexes."""
+        logger.info("Creating indexes and constraints...")
+        
         try:
             # Create traditional indexes
             indexes = self.config.get('indexes', [])
+            logger.info(f"Creating {len(indexes)} index groups...")
+            
             for index_config in indexes:
                 label = index_config['label']
                 properties = index_config['properties']
@@ -663,13 +389,18 @@ class EnhancedGraphConverter:
                         query = f"CREATE INDEX FOR (n:{label}) ON (n.{prop})"
                         self.graph.query(query)
                         self.stats['indexes_created'] += 1
-                        logger.info(f"Created index on {label}.{prop}")
+                        logger.debug(f"Created index on {label}.{prop}")
                     except Exception as e:
-                        if "already exists" not in str(e).lower():
+                        error_msg = str(e).lower()
+                        if "already indexed" in error_msg or "already exists" in error_msg:
+                            logger.debug(f"Index already exists for {label}.{prop}")
+                        else:
                             logger.warning(f"Index creation failed for {label}.{prop}: {e}")
             
             # Create constraints
             constraints = self.config.get('constraints', [])
+            logger.info(f"Creating {len(constraints)} constraints...")
+            
             for constraint_config in constraints:
                 label = constraint_config['label']
                 property_name = constraint_config['property']
@@ -684,179 +415,253 @@ class EnhancedGraphConverter:
                             'PROPERTIES', '1', property_name
                         )
                         self.stats['constraints_created'] += 1
-                        logger.info(f"Created unique constraint on {label}.{property_name}")
+                        logger.debug(f"Created unique constraint on {label}.{property_name}")
                         
                 except Exception as e:
-                    if "already exists" not in str(e).lower():
-                        logger.warning(f"Constraint creation failed: {e}")
+                    error_msg = str(e).lower()
+                    if "already exists" in error_msg or "pending" in error_msg:
+                        logger.debug(f"Constraint already exists for {label}.{property_name}")
+                    else:
+                        logger.warning(f"Constraint creation failed for {label}.{property_name}: {e}")
             
-            # Create vector indexes
-            self._create_vector_indexes()
+            # Create vector indexes if embedding provider is available
+            if self.embedding_provider:
+                self._create_vector_indexes()
             
+            logger.info(f"Created {self.stats['indexes_created']} indexes and {self.stats['constraints_created']} constraints")
+                        
         except Exception as e:
             logger.error(f"Error creating indexes/constraints: {e}")
     
-    def _generate_comprehensive_report(self) -> Dict:
-        """Generate comprehensive analysis report."""
-        try:
-            # Basic graph statistics
-            node_count_query = "MATCH (n) RETURN count(n) as node_count"
-            relationship_count_query = "MATCH ()-[r]->() RETURN count(r) as rel_count"
-            
-            node_result = self.graph.query(node_count_query)
-            rel_result = self.graph.query(relationship_count_query)
-            
-            total_nodes = node_result.result_set[0][0] if node_result.result_set else 0
-            total_relationships = rel_result.result_set[0][0] if rel_result.result_set else 0
-            
-            # Node and relationship distributions
-            node_types_query = "MATCH (n) RETURN labels(n) as label, count(n) as count ORDER BY count DESC"
-            node_types_result = self.graph.query(node_types_query)
-            
-            node_distribution = {}
-            for row in node_types_result.result_set:
-                label = row[0][0] if row[0] else 'Unknown'
-                count = row[1]
-                node_distribution[label] = count
-            
-            rel_types_query = "MATCH ()-[r]->() RETURN type(r) as rel_type, count(r) as count ORDER BY count DESC"
-            rel_types_result = self.graph.query(rel_types_query)
-            
-            rel_distribution = {}
-            for row in rel_types_result.result_set:
-                rel_type = row[0]
-                count = row[1]
-                rel_distribution[rel_type] = count
-            
-            # Enhanced analytics
-            graph_density = total_relationships / (total_nodes * (total_nodes - 1)) if total_nodes > 1 else 0
-            
-            # Vector similarity analysis (if embeddings exist)
-            vector_analysis = {}
-            if self.embedding_provider:
-                vector_analysis = {
-                    'total_embeddings': self.stats['embeddings_created'],
-                    'vector_dimensions': self.embedding_provider.config.dimensions,
-                    'similarity_function': self.embedding_provider.config.similarity_function,
-                    'vector_indexes': self.stats['vector_indexes_created']
-                }
-            
-            report = {
-                'summary': {
-                    'total_nodes': total_nodes,
-                    'total_relationships': total_relationships,
-                    'graph_density': graph_density,
-                    'processing_time_seconds': self.stats['processing_time'],
-                    'files_processed': self.stats['files_processed']
-                },
-                'distributions': {
-                    'nodes': node_distribution,
-                    'relationships': rel_distribution
-                },
-                'embeddings': vector_analysis,
-                'data_quality': self.stats['data_quality_reports'],
-                'performance_stats': self.stats,
-                'timestamp': datetime.now().isoformat()
-            }
-            
-            return report
-            
-        except Exception as e:
-            logger.error(f"Error generating comprehensive report: {e}")
-            return {'error': str(e), 'timestamp': datetime.now().isoformat()}
-    
-    def convert(self):
-        """Main enhanced conversion process."""
-        start_time = time.time()
+    def _create_vector_indexes(self):
+        """Create vector indexes for embeddings."""
+        vector_fields = self.config.get('embedding', {}).get('vector_fields', [])
+        logger.info(f"Creating {len(vector_fields)} vector indexes...")
         
-        try:
-            logger.info("Starting enhanced CSV to FalkorDB knowledge graph conversion...")
-            
-            # Create enhanced indexes and constraints
-            self._create_enhanced_indexes_and_constraints()
-            
-            # Process node files with enhanced features
-            node_files = self.config.get('node_files', [])
-            for file_config in node_files:
-                nodes_created = self._process_enhanced_nodes(file_config)
-                self.stats['nodes_created'] += nodes_created
-                self.stats['files_processed'] += 1
-            
-            # Process relationship files (using existing logic)
-            relationship_files = self.config.get('relationship_files', [])
-            for file_config in relationship_files:
-                relationships_created = self._process_relationships(file_config)
-                self.stats['relationships_created'] += relationships_created
-                self.stats['files_processed'] += 1
-            
-            # Calculate processing time
-            self.stats['processing_time'] = time.time() - start_time
-            
-            # Generate comprehensive report
-            comprehensive_report = self._generate_comprehensive_report()
-            
-            # Save enhanced report
-            report_path = f"{self.graph_name}_enhanced_report.json"
-            with open(report_path, 'w') as f:
-                json.dump(comprehensive_report, f, indent=2)
-            
-            logger.info("Enhanced conversion completed successfully!")
-            logger.info(f"Comprehensive report saved to: {report_path}")
-            logger.info(f"Total nodes created: {self.stats['nodes_created']}")
-            logger.info(f"Total relationships created: {self.stats['relationships_created']}")
-            logger.info(f"Total embeddings created: {self.stats['embeddings_created']}")
-            logger.info(f"Vector indexes created: {self.stats['vector_indexes_created']}")
-            logger.info(f"Processing time: {self.stats['processing_time']:.2f} seconds")
-            
-            if self.stats['errors']:
-                logger.warning(f"Encountered {len(self.stats['errors'])} errors during processing")
-            
-        except Exception as e:
-            logger.error(f"Enhanced conversion failed: {e}")
-            raise
-        finally:
-            if self.db:
-                self.db.close()
-            if self.redis_client:
-                self.redis_client.close()
+        for field_config in vector_fields:
+            try:
+                entity_pattern = field_config['entity_pattern']
+                attribute = field_config['attribute']
+                
+                options = {
+                    'dimension': self.embedding_provider.dimensions,
+                    'similarityFunction': field_config.get('similarityFunction', 'cosine'),
+                    'M': field_config.get('M', 16),
+                    'efConstruction': field_config.get('efConstruction', 200),
+                    'efRuntime': field_config.get('efRuntime', 10)
+                }
+                
+                # Build options string properly
+                options_str = ", ".join([f"{k}: {v}" if isinstance(v, (int, float)) else f"{k}: '{v}'" for k, v in options.items()])
+                
+                query = f"CREATE VECTOR INDEX FOR {entity_pattern} ON ({attribute}) OPTIONS {{{options_str}}}"
+                
+                self.graph.query(query)
+                self.stats['vector_indexes_created'] += 1
+                logger.info(f"Created vector index: {entity_pattern} ON {attribute}")
+                
+            except Exception as e:
+                error_msg = str(e).lower()
+                if "already exists" in error_msg:
+                    logger.debug(f"Vector index already exists: {entity_pattern}")
+                else:
+                    logger.error(f"Error creating vector index: {e}")
     
-    def _process_relationships(self, file_config: Dict) -> int:
-        """Process relationships (keeping original logic for compatibility)."""
+    def _generate_embeddings_for_text_fields(self, df: pd.DataFrame, text_fields: List[str]) -> Dict[str, List[List[float]]]:
+        """Generate embeddings for specified text fields."""
+        if not self.embedding_provider:
+            return {}
+        
+        embeddings = {}
+        
+        for field in text_fields:
+            if field not in df.columns:
+                logger.warning(f"Field '{field}' not found in DataFrame columns: {list(df.columns)}")
+                continue
+            
+            logger.info(f"Generating embeddings for field: {field}")
+            texts = df[field].fillna('').astype(str).tolist()
+            
+            try:
+                field_embeddings = self.embedding_provider.embed_texts(texts)
+                embeddings[field] = field_embeddings
+                self.stats['embeddings_created'] += len(field_embeddings)
+                logger.info(f"Generated {len(field_embeddings)} embeddings for field: {field}")
+                
+            except Exception as e:
+                logger.error(f"Error generating embeddings for field {field}: {e}")
+                embeddings[field] = [[0.0] * self.embedding_provider.dimensions] * len(texts)
+        
+        return embeddings
+    
+    def _process_nodes(self, file_config: Dict) -> int:
+        """Process nodes with embeddings."""
         csv_file = self.csv_path / file_config['file']
         
         if not csv_file.exists():
             logger.error(f"CSV file not found: {csv_file}")
             return 0
         
+        logger.info(f"Processing node file: {csv_file}")
+        
         try:
             df = pd.read_csv(csv_file)
-            logger.info(f"Processing {len(df)} relationships from {csv_file}")
+            logger.info(f"Loaded {len(df)} rows from {csv_file.name}")
+            
+            # Data quality analysis
+            logger.info("Analyzing data quality...")
+            quality_report = self.data_quality_analyzer.analyze_dataframe(df)
+            self.stats['data_quality_reports'][file_config['file']] = quality_report
+            logger.info(f"Data quality score: {quality_report['quality_score']:.2f}")
+            
+            # Generate embeddings if configured
+            embeddings = {}
+            embedding_fields = file_config.get('embedding_fields', [])
+            if embedding_fields and self.embedding_provider:
+                logger.info(f"Processing embedding fields: {embedding_fields}")
+                embeddings = self._generate_embeddings_for_text_fields(df, embedding_fields)
+            
+            node_label = file_config['node_label']
+            field_mappings = file_config['field_mappings']
+            batch_size = file_config.get('batch_size', 1000)
+            
+            nodes_created = 0
+            total_batches = (len(df) + batch_size - 1) // batch_size
+            
+            logger.info(f"Creating {node_label} nodes in {total_batches} batches...")
+            
+            # Process in batches
+            for i in range(0, len(df), batch_size):
+                batch_num = i // batch_size + 1
+                batch = df.iloc[i:i + batch_size]
+                
+                logger.debug(f"Processing batch {batch_num}/{total_batches}")
+                
+                create_statements = []
+                for idx, (_, row) in enumerate(batch.iterrows()):
+                    actual_idx = i + idx
+                    
+                    # Build basic properties
+                    properties = self._build_cypher_properties(row, field_mappings)
+                    
+                    # Add embeddings as vector properties
+                    for field, field_embeddings in embeddings.items():
+                        if actual_idx < len(field_embeddings):
+                            embedding = field_embeddings[actual_idx]
+                            # Ensure embedding is JSON serializable
+                            embedding = convert_to_json_serializable(embedding)
+                            vector_field_name = f"{field}_embedding"
+                            vector_str = f"vecf32({json.dumps(embedding)})"
+                            # Remove closing brace and add vector property
+                            if properties.endswith('}'):
+                                if properties == '{}':
+                                    properties = f"{{{vector_field_name}: {vector_str}}}"
+                                else:
+                                    properties = properties[:-1] + f", {vector_field_name}: {vector_str}" + "}"
+                    
+                    create_statements.append(f"CREATE (n{nodes_created}:{node_label} {properties})")
+                    nodes_created += 1
+                
+                # Execute batch
+                if create_statements:
+                    query = " ".join(create_statements)
+                    try:
+                        self.graph.query(query)
+                        logger.debug(f"Created batch {batch_num}/{total_batches} ({len(create_statements)} nodes)")
+                    except Exception as e:
+                        logger.error(f"Error creating batch of {node_label} nodes: {e}")
+                        self.stats['errors'].append(f"Node creation error in {csv_file}: {e}")
+            
+            logger.info(f"Successfully created {nodes_created} {node_label} nodes")
+            return nodes_created
+            
+        except Exception as e:
+            logger.error(f"Error processing nodes from {csv_file}: {e}")
+            self.stats['errors'].append(f"Node processing error {csv_file}: {e}")
+            return 0
+    
+    def _build_cypher_properties(self, row: pd.Series, field_mappings: Dict) -> str:
+        """Build Cypher property string from pandas row."""
+        properties = []
+        
+        for csv_field, graph_field in field_mappings.items():
+            if csv_field in row.index:
+                value = self._sanitize_value(row[csv_field])
+                if value is not None:
+                    if isinstance(value, str):
+                        properties.append(f"{graph_field}: '{value}'")
+                    else:
+                        properties.append(f"{graph_field}: {value}")
+        
+        return "{" + ", ".join(properties) + "}"
+    
+    def _sanitize_value(self, value: Any) -> Any:
+        """Sanitize and convert values for Cypher queries."""
+        if pd.isna(value) or value is None:
+            return None
+        
+        # Convert numpy types to native Python types
+        value = convert_to_json_serializable(value)
+        
+        if isinstance(value, str):
+            # Escape single quotes and handle special characters
+            return value.replace("'", "\\'").replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r')
+        
+        if isinstance(value, (int, float)):
+            return value
+        
+        if isinstance(value, bool):
+            return str(value).lower()
+        
+        # Convert other types to string and escape
+        str_value = str(value)
+        return str_value.replace("'", "\\'").replace('"', '\\"')
+    
+    def _process_relationships(self, file_config: Dict) -> int:
+        """Process relationships from CSV file."""
+        csv_file = self.csv_path / file_config['file']
+        
+        if not csv_file.exists():
+            logger.error(f"CSV file not found: {csv_file}")
+            return 0
+        
+        logger.info(f"Processing relationship file: {csv_file}")
+        
+        try:
+            df = pd.read_csv(csv_file)
+            logger.info(f"Loaded {len(df)} relationships from {csv_file.name}")
             
             relationships_created = 0
             batch_size = file_config.get('batch_size', 1000)
+            rel_config = file_config['relationship']
+            rel_type = rel_config['type']
+            
+            logger.info(f"Creating {rel_type} relationships...")
             
             for i in range(0, len(df), batch_size):
                 batch = df.iloc[i:i + batch_size]
                 
                 for idx, row in batch.iterrows():
-                    rel_config = file_config['relationship']
-                    
+                    # Check if foreign key values are not null before creating relationship
                     source_key = row[rel_config['source']['csv_field']]
                     target_key = row[rel_config['target']['csv_field']]
                     
-                    if pd.isna(source_key) or pd.isna(target_key):
+                    if pd.isna(source_key) or pd.isna(target_key) or source_key is None or target_key is None:
+                        logger.debug(f"Skipping relationship due to null key: source={source_key}, target={target_key}")
                         continue
                     
+                    # Build MATCH clauses for source and target nodes
                     source_match = self._build_match_clause(row, rel_config['source'], "source")
                     target_match = self._build_match_clause(row, rel_config['target'], "target")
                     
+                    # Build relationship properties
                     rel_properties = ""
                     if 'properties' in rel_config:
                         props = self._build_cypher_properties(row, rel_config['properties'])
                         if props != "{}":
                             rel_properties = f" {props}"
                     
-                    rel_type = rel_config['type']
+                    # Create relationship query
                     query = f"""
                     MATCH {source_match}
                     MATCH {target_match}
@@ -864,13 +669,17 @@ class EnhancedGraphConverter:
                     """
                     
                     try:
-                        self.graph.query(query)
+                        result = self.graph.query(query)
                         relationships_created += 1
+                        
+                        if relationships_created % 100 == 0:
+                            logger.debug(f"Created {relationships_created} relationships so far...")
+                            
                     except Exception as e:
                         logger.warning(f"Error creating relationship: {e}")
                         self.stats['errors'].append(f"Relationship creation error: {e}")
             
-            logger.info(f"Created {relationships_created} relationships from {csv_file}")
+            logger.info(f"Successfully created {relationships_created} {rel_type} relationships")
             return relationships_created
             
         except Exception as e:
@@ -879,7 +688,7 @@ class EnhancedGraphConverter:
             return 0
     
     def _build_match_clause(self, row: pd.Series, node_config: Dict, var_name: str = "n") -> str:
-        """Build MATCH clause for relationships."""
+        """Build MATCH clause for finding nodes in relationships."""
         label = node_config['label']
         key_field = node_config['key_field']
         csv_field = node_config['csv_field']
@@ -890,50 +699,210 @@ class EnhancedGraphConverter:
             return f"({var_name}:{label} {{{key_field}: '{key_value}'}})"
         else:
             return f"({var_name}:{label} {{{key_field}: {key_value}}})"
+    
+    def _generate_profile_report(self) -> Dict:
+        """Generate comprehensive profiling report."""
+        logger.info("Generating profile report...")
+        
+        try:
+            # Get graph statistics
+            node_count_query = "MATCH (n) RETURN count(n) as node_count"
+            relationship_count_query = "MATCH ()-[r]->() RETURN count(r) as rel_count"
+            
+            node_result = self.graph.query(node_count_query)
+            rel_result = self.graph.query(relationship_count_query)
+            
+            total_nodes = node_result.result_set[0][0] if node_result.result_set else 0
+            total_relationships = rel_result.result_set[0][0] if rel_result.result_set else 0
+            
+            # Convert to JSON serializable types
+            total_nodes = convert_to_json_serializable(total_nodes)
+            total_relationships = convert_to_json_serializable(total_relationships)
+            
+            # Get node type distribution
+            node_types_query = "MATCH (n) RETURN labels(n) as label, count(n) as count ORDER BY count DESC"
+            node_types_result = self.graph.query(node_types_query)
+            
+            node_distribution = {}
+            for row in node_types_result.result_set:
+                label = row[0][0] if row[0] else 'Unknown'
+                count = convert_to_json_serializable(row[1])
+                node_distribution[label] = count
+            
+            # Get relationship type distribution
+            rel_types_query = "MATCH ()-[r]->() RETURN type(r) as rel_type, count(r) as count ORDER BY count DESC"
+            rel_types_result = self.graph.query(rel_types_query)
+            
+            rel_distribution = {}
+            for row in rel_types_result.result_set:
+                rel_type = row[0]
+                count = convert_to_json_serializable(row[1])
+                rel_distribution[rel_type] = count
+            
+            # Calculate graph density
+            graph_density = 0
+            if total_nodes > 1:
+                graph_density = total_relationships / (total_nodes * (total_nodes - 1))
+            graph_density = convert_to_json_serializable(graph_density)
+            
+            # Embedding analytics
+            embedding_analytics = {}
+            if self.embedding_provider:
+                embedding_analytics = {
+                    'total_embeddings': convert_to_json_serializable(self.stats['embeddings_created']),
+                    'vector_dimensions': convert_to_json_serializable(self.embedding_provider.dimensions),
+                    'model_name': self.embedding_provider.model_name,
+                    'vector_indexes': convert_to_json_serializable(self.stats['vector_indexes_created'])
+                }
+            
+            profile_report = {
+                'summary': {
+                    'total_nodes': total_nodes,
+                    'total_relationships': total_relationships,
+                    'graph_density': graph_density,
+                    'processing_time_seconds': convert_to_json_serializable(self.stats['processing_time']),
+                    'files_processed': convert_to_json_serializable(self.stats['files_processed'])
+                },
+                'distributions': {
+                    'nodes': node_distribution,
+                    'relationships': rel_distribution
+                },
+                'embeddings': embedding_analytics,
+                'data_quality': convert_to_json_serializable(self.stats['data_quality_reports']),
+                'performance_stats': convert_to_json_serializable(self.stats),
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            # Ensure entire report is JSON serializable
+            return convert_to_json_serializable(profile_report)
+            
+        except Exception as e:
+            logger.error(f"Error generating profile report: {e}")
+            return convert_to_json_serializable({'error': str(e), 'timestamp': datetime.now().isoformat()})
+    
+    def convert(self):
+        """Main conversion process."""
+        start_time = time.time()
+        
+        try:
+            logger.info("=" * 60)
+            logger.info("STARTING CSV TO FALKORDB CONVERSION")
+            logger.info("=" * 60)
+            
+            # Create indexes, constraints, and vector indexes
+            self._create_indexes_and_constraints()
+            
+            # Process node files
+            node_files = self.config.get('node_files', [])
+            logger.info(f"Processing {len(node_files)} node file(s)...")
+            
+            for file_config in node_files:
+                nodes_created = self._process_nodes(file_config)
+                self.stats['nodes_created'] += nodes_created
+                self.stats['files_processed'] += 1
+            
+            # Process relationship files
+            relationship_files = self.config.get('relationship_files', [])
+            logger.info(f"Processing {len(relationship_files)} relationship file(s)...")
+            
+            for file_config in relationship_files:
+                relationships_created = self._process_relationships(file_config)
+                self.stats['relationships_created'] += relationships_created
+                self.stats['files_processed'] += 1
+            
+            # Calculate processing time
+            self.stats['processing_time'] = time.time() - start_time
+            
+            # Generate profile report
+            profile_report = self._generate_profile_report()
+            
+            # Save profile report
+            profile_path = f"{self.graph_name}_profile_report.json"
+            with open(profile_path, 'w') as f:
+                json.dump(profile_report, f, indent=2, cls=JSONEncoder)
+            
+            logger.info("=" * 60)
+            logger.info("CONVERSION COMPLETED SUCCESSFULLY!")
+            logger.info("=" * 60)
+            logger.info(f"Profile report saved to: {profile_path}")
+            logger.info(f"Total nodes created: {self.stats['nodes_created']}")
+            logger.info(f"Total relationships created: {self.stats['relationships_created']}")
+            logger.info(f"Total embeddings created: {self.stats['embeddings_created']}")
+            logger.info(f"Vector indexes created: {self.stats['vector_indexes_created']}")
+            logger.info(f"Processing time: {self.stats['processing_time']:.2f} seconds")
+            
+            if self.stats['errors']:
+                logger.warning(f"Encountered {len(self.stats['errors'])} errors during processing")
+                for error in self.stats['errors']:
+                    logger.warning(f"Error: {error}")
+            
+        except Exception as e:
+            logger.error(f"Conversion failed: {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            raise
+        finally:
+            if self.db:
+                try:
+                    self.db.close()
+                    logger.info("Database connection closed")
+                except:
+                    pass
+            if self.redis_client:
+                try:
+                    self.redis_client.close()
+                    logger.info("Redis connection closed")
+                except:
+                    pass
 
 
 def main():
-    """Main entry point for the enhanced converter."""
+    """Main entry point for the script."""
+    print("FalkorDB CSV to Knowledge Graph Converter")
+    print("=" * 50)
+    
     parser = argparse.ArgumentParser(
-        description="Enhanced CSV to FalkorDB Knowledge Graph Converter with API-based Vector Embeddings",
+        description="Convert CSV files to FalkorDB graph database with OpenAI embeddings",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Features:
-- Vector embeddings (OpenAI, UAE via API, custom endpoints)
-- Data quality analysis and validation
-- Performance optimizations
-- Comprehensive analytics
-
 Examples:
-    python enhanced_graph_converter.py ecommerce_graph ./csv_files ./enhanced_config.json
-    python enhanced_graph_converter.py social_network /path/to/csvs /path/to/config.json
+    python graph_converter.py ecommerce_graph ./csv_files ./config.json
+    python graph_converter.py social_network /path/to/csvs /path/to/config.json
         """
     )
     
     parser.add_argument('graph_name', help='Name of the graph to create in FalkorDB')
     parser.add_argument('csv_path', help='Path to directory containing CSV files')
-    parser.add_argument('config_path', help='Path to enhanced configuration JSON file')
-    
-    args = parser.parse_args()
-    
-    # Validate arguments
-    if not os.path.exists(args.csv_path):
-        print(f"Error: CSV directory not found: {args.csv_path}")
-        sys.exit(1)
-    
-    if not os.path.exists(args.config_path):
-        print(f"Error: Configuration file not found: {args.config_path}")
-        sys.exit(1)
+    parser.add_argument('config_path', help='Path to configuration JSON file')
     
     try:
-        converter = EnhancedGraphConverter(args.graph_name, args.csv_path, args.config_path)
-        converter.convert()
-        print(f"Successfully created enhanced knowledge graph: {args.graph_name}")
+        args = parser.parse_args()
         
-    except Exception as e:
-        print(f"Enhanced conversion failed: {e}")
+        # Validate arguments
+        if not os.path.exists(args.csv_path):
+            print(f"Error: CSV directory not found: {args.csv_path}")
+            sys.exit(1)
+        
+        if not os.path.exists(args.config_path):
+            print(f"Error: Configuration file not found: {args.config_path}")
+            sys.exit(1)
+        
+        # Show what we're about to do
+        print(f"Graph name: {args.graph_name}")
+        print(f"CSV path: {args.csv_path}")
+        print(f"Config path: {args.config_path}")
+        print()
+        
+        # Create and run converter
+        converter = GraphConverter(args.graph_name, args.csv_path, args.config_path)
+        converter.convert()
+        
+        print(f"\n✅ Successfully converted CSV data to FalkorDB graph: {args.graph_name}")
+        
+    except KeyboardInterrupt:
+        print("\n⚠️ Conversion interrupted by user")
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()
+    except Exception as e:
+        print(f"\n❌ Conversion failed: {e}")
+        logger.error(f"Main execution failed: {e}")
+        sys.exit(1)
