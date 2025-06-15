@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-FalkorDB CSV to Knowledge Graph Converter with OpenAI Embeddings
-A streamlined tool for creating knowledge graphs from CSV data with OpenAI vector embeddings.
+FalkorDB CSV to Knowledge Graph Converter with OpenAI Embeddings and Persistent Caching
+A streamlined tool for creating knowledge graphs from CSV data with optimized OpenAI vector embeddings.
 
 Usage:
     python graph_converter.py <graph_name> <csv_directory_path> <config_file_path>
@@ -13,6 +13,8 @@ import json
 import time
 import logging
 import argparse
+import hashlib
+import pickle
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from datetime import datetime
@@ -252,6 +254,7 @@ class GraphConverter:
             'nodes_created': 0,
             'relationships_created': 0,
             'embeddings_created': 0,
+            'embeddings_from_cache': 0,
             'vector_indexes_created': 0,
             'indexes_created': 0,
             'constraints_created': 0,
@@ -468,11 +471,26 @@ class GraphConverter:
                     logger.error(f"Error creating vector index: {e}")
     
     def _generate_embeddings_for_text_fields(self, df: pd.DataFrame, text_fields: List[str]) -> Dict[str, List[List[float]]]:
-        """Generate embeddings for specified text fields."""
+        """Generate embeddings for specified text fields with persistent file-based caching across runs."""
         if not self.embedding_provider:
             return {}
         
+        # Create cache filename based on model and dimensions
+        cache_filename = f"embedding_cache_{self.embedding_provider.model_name}_{self.embedding_provider.dimensions}d.pkl"
+        
+        # Load existing cache if it exists
+        persistent_cache = {}
+        if os.path.exists(cache_filename):
+            try:
+                with open(cache_filename, 'rb') as f:
+                    persistent_cache = pickle.load(f)
+                logger.info(f"Loaded {len(persistent_cache)} cached embeddings from {cache_filename}")
+            except Exception as e:
+                logger.warning(f"Could not load embedding cache: {e}")
+                persistent_cache = {}
+        
         embeddings = {}
+        cache_updated = False
         
         for field in text_fields:
             if field not in df.columns:
@@ -480,17 +498,66 @@ class GraphConverter:
                 continue
             
             logger.info(f"Generating embeddings for field: {field}")
+            
+            # Get all texts and clean them
             texts = df[field].fillna('').astype(str).tolist()
             
+            # Create hash-based keys for consistent caching
+            uncached_texts = []
+            text_to_hash = {}
+            
+            for text in texts:
+                # Create hash of text for consistent cache key
+                text_hash = hashlib.md5(text.encode('utf-8')).hexdigest()
+                text_to_hash[text] = text_hash
+                
+                if text_hash not in persistent_cache and text not in uncached_texts:
+                    uncached_texts.append(text)
+            
+            cache_hits = len(texts) - len(uncached_texts)
+            
+            logger.info(f"Field '{field}': {len(texts)} total rows, {len(uncached_texts)} need embedding, {cache_hits} from persistent cache")
+            
             try:
-                field_embeddings = self.embedding_provider.embed_texts(texts)
+                # Generate embeddings only for uncached texts
+                if uncached_texts:
+                    new_embeddings = self.embedding_provider.embed_texts(uncached_texts)
+                    
+                    # Add to persistent cache
+                    for i, text in enumerate(uncached_texts):
+                        text_hash = text_to_hash[text]
+                        persistent_cache[text_hash] = new_embeddings[i]
+                    
+                    cache_updated = True
+                    self.stats['embeddings_created'] += len(uncached_texts)
+                    logger.info(f"Generated {len(uncached_texts)} new embeddings, {cache_hits} reused from cache")
+                else:
+                    logger.info(f"All texts for field '{field}' found in persistent cache - no API calls needed!")
+                
+                # Update cache hit statistics
+                self.stats['embeddings_from_cache'] += cache_hits
+                
+                # Build final embeddings list using cache
+                field_embeddings = []
+                for text in texts:
+                    text_hash = text_to_hash[text]
+                    field_embeddings.append(persistent_cache[text_hash])
+                
                 embeddings[field] = field_embeddings
-                self.stats['embeddings_created'] += len(field_embeddings)
-                logger.info(f"Generated {len(field_embeddings)} embeddings for field: {field}")
                 
             except Exception as e:
                 logger.error(f"Error generating embeddings for field {field}: {e}")
-                embeddings[field] = [[0.0] * self.embedding_provider.dimensions] * len(texts)
+                zero_vector = [0.0] * self.embedding_provider.dimensions
+                embeddings[field] = [zero_vector] * len(texts)
+        
+        # Save updated cache if we added new embeddings
+        if cache_updated:
+            try:
+                with open(cache_filename, 'wb') as f:
+                    pickle.dump(persistent_cache, f)
+                logger.info(f"Saved {len(persistent_cache)} embeddings to persistent cache: {cache_filename}")
+            except Exception as e:
+                logger.warning(f"Could not save embedding cache: {e}")
         
         return embeddings
     
@@ -745,14 +812,25 @@ class GraphConverter:
                 graph_density = total_relationships / (total_nodes * (total_nodes - 1))
             graph_density = convert_to_json_serializable(graph_density)
             
-            # Embedding analytics
+            # Enhanced embedding analytics with caching stats
             embedding_analytics = {}
             if self.embedding_provider:
+                total_embeddings_generated = self.stats['embeddings_created']
+                total_embeddings_from_cache = self.stats['embeddings_from_cache']
+                total_embeddings_needed = total_embeddings_generated + total_embeddings_from_cache
+                
+                cache_hit_rate = 0
+                if total_embeddings_needed > 0:
+                    cache_hit_rate = total_embeddings_from_cache / total_embeddings_needed
+                
                 embedding_analytics = {
-                    'total_embeddings': convert_to_json_serializable(self.stats['embeddings_created']),
+                    'total_embeddings_generated': convert_to_json_serializable(total_embeddings_generated),
+                    'total_embeddings_from_cache': convert_to_json_serializable(total_embeddings_from_cache),
+                    'cache_hit_rate': convert_to_json_serializable(cache_hit_rate),
                     'vector_dimensions': convert_to_json_serializable(self.embedding_provider.dimensions),
                     'model_name': self.embedding_provider.model_name,
-                    'vector_indexes': convert_to_json_serializable(self.stats['vector_indexes_created'])
+                    'vector_indexes': convert_to_json_serializable(self.stats['vector_indexes_created']),
+                    'estimated_api_cost_savings': f"${(total_embeddings_from_cache * 0.00013):.4f}" if total_embeddings_from_cache > 0 else "$0.0000"
                 }
             
             profile_report = {
@@ -786,7 +864,7 @@ class GraphConverter:
         
         try:
             logger.info("=" * 60)
-            logger.info("STARTING CSV TO FALKORDB CONVERSION")
+            logger.info("STARTING CSV TO FALKORDB CONVERSION WITH OPTIMIZED EMBEDDINGS")
             logger.info("=" * 60)
             
             # Create indexes, constraints, and vector indexes
@@ -827,7 +905,13 @@ class GraphConverter:
             logger.info(f"Profile report saved to: {profile_path}")
             logger.info(f"Total nodes created: {self.stats['nodes_created']}")
             logger.info(f"Total relationships created: {self.stats['relationships_created']}")
-            logger.info(f"Total embeddings created: {self.stats['embeddings_created']}")
+            logger.info(f"Total embeddings generated: {self.stats['embeddings_created']}")
+            logger.info(f"Total embeddings from cache: {self.stats['embeddings_from_cache']}")
+            
+            if self.stats['embeddings_from_cache'] > 0:
+                estimated_savings = self.stats['embeddings_from_cache'] * 0.00013
+                logger.info(f"Estimated API cost savings: ${estimated_savings:.4f}")
+            
             logger.info(f"Vector indexes created: {self.stats['vector_indexes_created']}")
             logger.info(f"Processing time: {self.stats['processing_time']:.2f} seconds")
             
@@ -858,16 +942,22 @@ class GraphConverter:
 
 def main():
     """Main entry point for the script."""
-    print("FalkorDB CSV to Knowledge Graph Converter")
-    print("=" * 50)
+    print("FalkorDB CSV to Knowledge Graph Converter with Optimized Embeddings")
+    print("=" * 70)
     
     parser = argparse.ArgumentParser(
-        description="Convert CSV files to FalkorDB graph database with OpenAI embeddings",
+        description="Convert CSV files to FalkorDB graph database with optimized OpenAI embeddings",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
     python graph_converter.py ecommerce_graph ./csv_files ./config.json
     python graph_converter.py social_network /path/to/csvs /path/to/config.json
+    
+Features:
+    - Persistent embedding caching (saves costs across runs)
+    - Duplicate text detection and optimization
+    - Comprehensive data quality analysis
+    - Vector similarity search support
         """
     )
     
@@ -898,6 +988,8 @@ Examples:
         converter.convert()
         
         print(f"\n✅ Successfully converted CSV data to FalkorDB graph: {args.graph_name}")
+        print("📁 Check the generated profile report for detailed statistics")
+        print("💾 Embedding cache saved for future runs (cost optimization)")
         
     except KeyboardInterrupt:
         print("\n⚠️ Conversion interrupted by user")
@@ -906,3 +998,6 @@ Examples:
         print(f"\n❌ Conversion failed: {e}")
         logger.error(f"Main execution failed: {e}")
         sys.exit(1)
+
+if __name__ == "__main__":
+    main()
