@@ -566,9 +566,22 @@ class GraphConverter:
     def _get_unique_key_field(self, node_label: str) -> Optional[str]:
         """Get the unique key field for a node label from constraints configuration."""
         constraints = self.config.get('constraints', [])
+        
+        logger.debug(f"Looking for unique constraint for label '{node_label}'")
+        logger.debug(f"Available constraints: {constraints}")
+        
         for constraint in constraints:
-            if constraint['label'] == node_label and constraint.get('type', 'UNIQUE') == 'UNIQUE':
-                return constraint['property']
+            constraint_label = constraint.get('label', '')
+            constraint_property = constraint.get('property', '')
+            constraint_type = constraint.get('type', 'UNIQUE')
+            
+            logger.debug(f"Checking constraint: label='{constraint_label}', property='{constraint_property}', type='{constraint_type}'")
+            
+            if constraint_label == node_label and constraint_type == 'UNIQUE':
+                logger.info(f"Found unique constraint for {node_label}: {constraint_property}")
+                return constraint_property
+        
+        logger.debug(f"No unique constraint found for label '{node_label}'")
         return None
     
     def _check_for_duplicates(self, df: pd.DataFrame, field_mappings: Dict, unique_key_field: str) -> Dict:
@@ -631,6 +644,16 @@ class GraphConverter:
             unique_key_field = self._get_unique_key_field(node_label)
             use_merge = unique_key_field is not None
             
+            # Additional fallback: check if any field mapping looks like an ID field
+            if not use_merge:
+                for csv_field, graph_field in field_mappings.items():
+                    if graph_field.lower() in ['id', 'reportid', 'user_id', 'product_id', 'category_id', 'review_id']:
+                        logger.warning(f"No unique constraint found for {node_label}, but detected ID field '{graph_field}'")
+                        logger.warning(f"Enabling MERGE strategy as safety measure for potential ID field")
+                        unique_key_field = graph_field
+                        use_merge = True
+                        break
+            
             if use_merge:
                 logger.info(f"Using MERGE strategy for {node_label} nodes (unique constraint on {unique_key_field})")
                 
@@ -649,15 +672,20 @@ class GraphConverter:
                             unique_csv_field = csv_field
                             break
                     
-                    if unique_csv_field:
+                    if unique_csv_field and unique_csv_field in df.columns:
                         original_len = len(df)
+                        # Remove rows with null unique keys first
+                        df = df.dropna(subset=[unique_csv_field])
                         df = df.drop_duplicates(subset=[unique_csv_field], keep='last')
                         removed_count = original_len - len(df)
                         self.stats['duplicate_rows_removed'] += removed_count
                         self.stats['unique_constraint_violations_avoided'] += removed_count
                         logger.info(f"Removed {removed_count} duplicate rows, processing {len(df)} unique records")
+                    else:
+                        logger.error(f"Could not find CSV field for unique key {unique_key_field}")
+                        logger.error(f"Available field mappings: {field_mappings}")
             else:
-                logger.info(f"Using CREATE strategy for {node_label} nodes (no unique constraints)")
+                logger.info(f"Using CREATE strategy for {node_label} nodes (no unique constraints detected)")
             
             # Generate embeddings if configured
             embeddings = {}
@@ -705,20 +733,32 @@ class GraphConverter:
                         # Use MERGE for nodes with unique constraints
                         # Build the unique key property for matching
                         unique_value = None
+                        unique_csv_field = None
+                        
                         for csv_field, graph_field in field_mappings.items():
                             if graph_field == unique_key_field and csv_field in row.index:
                                 unique_value = self._sanitize_value(row[csv_field])
+                                unique_csv_field = csv_field
                                 break
                         
-                        if unique_value is not None:
+                        if unique_value is not None and unique_value != "":
                             if isinstance(unique_value, str):
-                                match_clause = f"({unique_key_field}: '{unique_value}')"
+                                match_clause = f"{unique_key_field}: '{unique_value}'"
                             else:
-                                match_clause = f"({unique_key_field}: {unique_value})"
+                                match_clause = f"{unique_key_field}: {unique_value}"
                             
-                            statements.append(f"MERGE (n{nodes_created}:{node_label} {{{match_clause}}}) SET n{nodes_created} = {properties}")
+                            # Build SET clause with all properties
+                            set_properties = properties
+                            if set_properties == "{}":
+                                set_properties = f"{{{match_clause}}}"
+                            else:
+                                # Merge the unique key into the properties if not already there
+                                if unique_key_field not in set_properties:
+                                    set_properties = set_properties[:-1] + f", {match_clause}" + "}"
+                            
+                            statements.append(f"MERGE (n{nodes_created}:{node_label} {{{match_clause}}}) SET n{nodes_created} = {set_properties}")
                         else:
-                            logger.warning(f"Skipping row with null unique key {unique_key_field}")
+                            logger.warning(f"Skipping row with null/empty unique key {unique_key_field} (CSV field: {unique_csv_field})")
                             continue
                     else:
                         # Use CREATE for nodes without unique constraints
@@ -734,13 +774,39 @@ class GraphConverter:
                         logger.debug(f"Processed batch {batch_num}/{total_batches} ({len(statements)} nodes)")
                     except Exception as e:
                         logger.error(f"Error processing batch of {node_label} nodes: {e}")
-                        logger.error(f"Failed query snippet: {query[:200]}...")
-                        self.stats['errors'].append(f"Node processing error in {csv_file}: {e}")
+                        logger.error(f"Batch info: use_merge={use_merge}, unique_key_field={unique_key_field}")
+                        logger.error(f"Failed query snippet: {query[:500]}...")
                         
                         # If it's still a constraint violation, provide more helpful error message
                         if "unique constraint violation" in str(e).lower():
-                            logger.error(f"Unique constraint violation detected. Check for duplicates in {unique_key_field} field.")
-                            logger.error(f"Consider removing duplicates from your CSV or updating the constraint configuration.")
+                            logger.error(f"Unique constraint violation detected. Debug info:")
+                            logger.error(f"- Node label: {node_label}")
+                            logger.error(f"- Detected unique key field: {unique_key_field}")
+                            logger.error(f"- Using MERGE strategy: {use_merge}")
+                            logger.error(f"- Available constraints in config: {self.config.get('constraints', [])}")
+                            
+                            # Try to extract which field is causing the violation
+                            error_msg = str(e)
+                            logger.error(f"Full error message: {error_msg}")
+                            
+                            if "reportid" in error_msg.lower():
+                                logger.error("The violation is on 'reportid' field. Check your configuration:")
+                                logger.error("Make sure your constraints section includes:")
+                                logger.error('{"label": "Report", "property": "reportid", "type": "UNIQUE"}')
+                        
+                        self.stats['errors'].append(f"Node processing error in {csv_file}: {e}")
+                        
+                        # Try to process individual statements to identify the problematic one
+                        if len(statements) > 1:
+                            logger.info("Attempting to process statements individually to identify the problem...")
+                            for i, stmt in enumerate(statements):
+                                try:
+                                    self.graph.query(stmt)
+                                    logger.debug(f"Statement {i+1} executed successfully")
+                                except Exception as stmt_error:
+                                    logger.error(f"Problem statement {i+1}: {stmt}")
+                                    logger.error(f"Error: {stmt_error}")
+                                    break
             
             logger.info(f"Successfully processed {nodes_created} {node_label} nodes")
             return nodes_created
