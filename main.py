@@ -311,6 +311,35 @@ class GraphConverter:
             logger.error(f"Error loading config: {e}")
             raise
     
+    def _detect_database_constraints(self):
+        """Detect what constraints actually exist in the database."""
+        detected_constraints = []
+        try:
+            constraints = self.redis_client.execute_command('GRAPH.CONSTRAINT', 'LIST', self.graph_name)
+            logger.info(f"Database has {len(constraints)} existing constraints:")
+            
+            for constraint in constraints:
+                logger.info(f"  - {constraint}")
+                # Parse constraint to extract label and property
+                parts = constraint.split()
+                if len(parts) >= 6 and parts[0] == 'UNIQUE' and parts[1] == 'NODE':
+                    label = parts[2]
+                    prop_count = int(parts[4])
+                    properties = parts[5:5+prop_count]
+                    for prop in properties:
+                        detected_constraints.append({
+                            'label': label,
+                            'property': prop,
+                            'type': 'UNIQUE'
+                        })
+                        logger.info(f"    Parsed: {label}.{prop} (UNIQUE)")
+            
+            return detected_constraints
+            
+        except Exception as e:
+            logger.warning(f"Could not detect database constraints: {e}")
+            return []
+
     def _setup_database(self):
         """Initialize FalkorDB connection."""
         logger.info("Setting up database connection...")
@@ -335,6 +364,26 @@ class GraphConverter:
             # Test connection
             test_result = self.graph.query("RETURN 1")
             logger.info(f"Database connection successful - Graph: {self.graph_name}")
+            
+            # Detect existing constraints in database
+            logger.info("Checking for existing database constraints...")
+            database_constraints = self._detect_database_constraints()
+            config_constraints = self.config.get('constraints', [])
+            
+            # Check for mismatches between database and config
+            if database_constraints and not config_constraints:
+                logger.warning("⚠️  CONSTRAINT MISMATCH DETECTED!")
+                logger.warning("The database has constraints but your config doesn't specify them.")
+                logger.warning("This will cause 'unique constraint violation' errors.")
+                logger.warning("")
+                logger.warning("Add these to your config 'constraints' section:")
+                for db_constraint in database_constraints:
+                    logger.warning(f'  {{"label": "{db_constraint["label"]}", "property": "{db_constraint["property"]}", "type": "UNIQUE"}}')
+                logger.warning("")
+                logger.warning("Or remove constraints from database with:")
+                for db_constraint in database_constraints:
+                    logger.warning(f'  GRAPH.CONSTRAINT DROP {self.graph_name} UNIQUE NODE {db_constraint["label"]} PROPERTIES 1 {db_constraint["property"]}')
+                logger.warning("")
             
         except Exception as e:
             logger.error(f"Database connection failed: {e}")
