@@ -260,6 +260,8 @@ class GraphConverter:
             'constraints_created': 0,
             'processing_time': 0,
             'files_processed': 0,
+            'duplicate_rows_removed': 0,
+            'unique_constraint_violations_avoided': 0,
             'data_quality_reports': {},
             'errors': []
         }
@@ -561,8 +563,49 @@ class GraphConverter:
         
         return embeddings
     
+    def _get_unique_key_field(self, node_label: str) -> Optional[str]:
+        """Get the unique key field for a node label from constraints configuration."""
+        constraints = self.config.get('constraints', [])
+        for constraint in constraints:
+            if constraint['label'] == node_label and constraint.get('type', 'UNIQUE') == 'UNIQUE':
+                return constraint['property']
+        return None
+    
+    def _check_for_duplicates(self, df: pd.DataFrame, field_mappings: Dict, unique_key_field: str) -> Dict:
+        """Check for duplicate key values and return statistics."""
+        duplicate_stats = {
+            'total_rows': len(df),
+            'unique_keys': 0,
+            'duplicate_rows': 0,
+            'duplicate_keys': []
+        }
+        
+        # Find the CSV field that maps to the unique key
+        unique_csv_field = None
+        for csv_field, graph_field in field_mappings.items():
+            if graph_field == unique_key_field:
+                unique_csv_field = csv_field
+                break
+        
+        if not unique_csv_field or unique_csv_field not in df.columns:
+            return duplicate_stats
+        
+        # Check for duplicates
+        key_values = df[unique_csv_field].dropna()
+        unique_values = key_values.drop_duplicates()
+        
+        duplicate_stats['unique_keys'] = len(unique_values)
+        duplicate_stats['duplicate_rows'] = len(df) - len(unique_values)
+        
+        if duplicate_stats['duplicate_rows'] > 0:
+            # Find the actual duplicate values
+            duplicates = key_values[key_values.duplicated()].unique().tolist()
+            duplicate_stats['duplicate_keys'] = duplicates[:10]  # Show first 10 duplicates
+        
+        return duplicate_stats
+
     def _process_nodes(self, file_config: Dict) -> int:
-        """Process nodes with embeddings."""
+        """Process nodes with embeddings and duplicate handling."""
         csv_file = self.csv_path / file_config['file']
         
         if not csv_file.exists():
@@ -581,6 +624,41 @@ class GraphConverter:
             self.stats['data_quality_reports'][file_config['file']] = quality_report
             logger.info(f"Data quality score: {quality_report['quality_score']:.2f}")
             
+            node_label = file_config['node_label']
+            field_mappings = file_config['field_mappings']
+            
+            # Check if this node type has a unique constraint
+            unique_key_field = self._get_unique_key_field(node_label)
+            use_merge = unique_key_field is not None
+            
+            if use_merge:
+                logger.info(f"Using MERGE strategy for {node_label} nodes (unique constraint on {unique_key_field})")
+                
+                # Check for duplicates in the data
+                duplicate_stats = self._check_for_duplicates(df, field_mappings, unique_key_field)
+                
+                if duplicate_stats['duplicate_rows'] > 0:
+                    logger.warning(f"Found {duplicate_stats['duplicate_rows']} duplicate rows for {node_label}")
+                    logger.warning(f"Will keep only the last occurrence of each {unique_key_field}")
+                    logger.warning(f"Example duplicate keys: {duplicate_stats['duplicate_keys']}")
+                    
+                    # Remove duplicates, keeping the last occurrence
+                    unique_csv_field = None
+                    for csv_field, graph_field in field_mappings.items():
+                        if graph_field == unique_key_field:
+                            unique_csv_field = csv_field
+                            break
+                    
+                    if unique_csv_field:
+                        original_len = len(df)
+                        df = df.drop_duplicates(subset=[unique_csv_field], keep='last')
+                        removed_count = original_len - len(df)
+                        self.stats['duplicate_rows_removed'] += removed_count
+                        self.stats['unique_constraint_violations_avoided'] += removed_count
+                        logger.info(f"Removed {removed_count} duplicate rows, processing {len(df)} unique records")
+            else:
+                logger.info(f"Using CREATE strategy for {node_label} nodes (no unique constraints)")
+            
             # Generate embeddings if configured
             embeddings = {}
             embedding_fields = file_config.get('embedding_fields', [])
@@ -588,10 +666,7 @@ class GraphConverter:
                 logger.info(f"Processing embedding fields: {embedding_fields}")
                 embeddings = self._generate_embeddings_for_text_fields(df, embedding_fields)
             
-            node_label = file_config['node_label']
-            field_mappings = file_config['field_mappings']
             batch_size = file_config.get('batch_size', 1000)
-            
             nodes_created = 0
             total_batches = (len(df) + batch_size - 1) // batch_size
             
@@ -604,7 +679,7 @@ class GraphConverter:
                 
                 logger.debug(f"Processing batch {batch_num}/{total_batches}")
                 
-                create_statements = []
+                statements = []
                 for idx, (_, row) in enumerate(batch.iterrows()):
                     actual_idx = i + idx
                     
@@ -626,20 +701,48 @@ class GraphConverter:
                                 else:
                                     properties = properties[:-1] + f", {vector_field_name}: {vector_str}" + "}"
                     
-                    create_statements.append(f"CREATE (n{nodes_created}:{node_label} {properties})")
+                    if use_merge and unique_key_field:
+                        # Use MERGE for nodes with unique constraints
+                        # Build the unique key property for matching
+                        unique_value = None
+                        for csv_field, graph_field in field_mappings.items():
+                            if graph_field == unique_key_field and csv_field in row.index:
+                                unique_value = self._sanitize_value(row[csv_field])
+                                break
+                        
+                        if unique_value is not None:
+                            if isinstance(unique_value, str):
+                                match_clause = f"({unique_key_field}: '{unique_value}')"
+                            else:
+                                match_clause = f"({unique_key_field}: {unique_value})"
+                            
+                            statements.append(f"MERGE (n{nodes_created}:{node_label} {{{match_clause}}}) SET n{nodes_created} = {properties}")
+                        else:
+                            logger.warning(f"Skipping row with null unique key {unique_key_field}")
+                            continue
+                    else:
+                        # Use CREATE for nodes without unique constraints
+                        statements.append(f"CREATE (n{nodes_created}:{node_label} {properties})")
+                    
                     nodes_created += 1
                 
                 # Execute batch
-                if create_statements:
-                    query = " ".join(create_statements)
+                if statements:
+                    query = " ".join(statements)
                     try:
                         self.graph.query(query)
-                        logger.debug(f"Created batch {batch_num}/{total_batches} ({len(create_statements)} nodes)")
+                        logger.debug(f"Processed batch {batch_num}/{total_batches} ({len(statements)} nodes)")
                     except Exception as e:
-                        logger.error(f"Error creating batch of {node_label} nodes: {e}")
-                        self.stats['errors'].append(f"Node creation error in {csv_file}: {e}")
+                        logger.error(f"Error processing batch of {node_label} nodes: {e}")
+                        logger.error(f"Failed query snippet: {query[:200]}...")
+                        self.stats['errors'].append(f"Node processing error in {csv_file}: {e}")
+                        
+                        # If it's still a constraint violation, provide more helpful error message
+                        if "unique constraint violation" in str(e).lower():
+                            logger.error(f"Unique constraint violation detected. Check for duplicates in {unique_key_field} field.")
+                            logger.error(f"Consider removing duplicates from your CSV or updating the constraint configuration.")
             
-            logger.info(f"Successfully created {nodes_created} {node_label} nodes")
+            logger.info(f"Successfully processed {nodes_created} {node_label} nodes")
             return nodes_created
             
         except Exception as e:
@@ -907,6 +1010,10 @@ class GraphConverter:
             logger.info(f"Total relationships created: {self.stats['relationships_created']}")
             logger.info(f"Total embeddings generated: {self.stats['embeddings_created']}")
             logger.info(f"Total embeddings from cache: {self.stats['embeddings_from_cache']}")
+            
+            if self.stats['duplicate_rows_removed'] > 0:
+                logger.info(f"Duplicate rows removed: {self.stats['duplicate_rows_removed']}")
+                logger.info(f"Unique constraint violations avoided: {self.stats['unique_constraint_violations_avoided']}")
             
             if self.stats['embeddings_from_cache'] > 0:
                 estimated_savings = self.stats['embeddings_from_cache'] * 0.00013
