@@ -1,181 +1,452 @@
 {
-    "database": {
-      "host": "localhost",
-      "port": 6379,
-      "password": null
-    },
-    "embedding": {
-      "enabled": true,
-      "model_name": "text-embedding-3-small",
-      "api_key": "${OPENAI_API_KEY}",
-      "dimensions": 1536,
-      "batch_size": 50,
-      "vector_fields": [
-        {
-          "entity_pattern": "(p:Product)",
-          "attribute": "p.description_embedding",
-          "similarityFunction": "cosine",
-          "M": 16,
-          "efConstruction": 200,
-          "efRuntime": 10
-        },
-        {
-          "entity_pattern": "(r:Review)",
-          "attribute": "r.review_text_embedding",
-          "similarityFunction": "cosine",
-          "M": 16,
-          "efConstruction": 200,
-          "efRuntime": 10
-        }
-      ]
-    },
-    "data_quality": {
-      "enabled": true,
-      "max_null_percentage": 0.5,
-      "duplicate_detection": true,
-      "outlier_detection": true,
-      "data_profiling": true
-    },
-    "indexes": [
+  "database": {
+    "host": "localhost",
+    "port": 6379,
+    "password": null
+  },
+  "embedding": {
+    "enabled": true,
+    "model_name": "text-embedding-3-small",
+    "api_key": "${OPENAI_API_KEY}",
+    "dimensions": 1536,
+    "batch_size": 50,
+    "vector_fields": [
       {
-        "label": "User",
-        "properties": ["user_id", "email"]
+        "entity_pattern": "(r:Report)",
+        "attribute": "r.reportname_embedding",
+        "similarityFunction": "cosine",
+        "M": 16,
+        "efConstruction": 200,
+        "efRuntime": 10
       },
       {
-        "label": "Product",
-        "properties": ["product_id", "name"]
+        "entity_pattern": "(r:Report)",
+        "attribute": "r.reportdescription_embedding",
+        "similarityFunction": "cosine",
+        "M": 16,
+        "efConstruction": 200,
+        "efRuntime": 10
       },
       {
-        "label": "Category",
-        "properties": ["category_id", "category_name"]
+        "entity_pattern": "(p:Process)",
+        "attribute": "p.processname_embedding",
+        "similarityFunction": "cosine",
+        "M": 16,
+        "efConstruction": 200,
+        "efRuntime": 10
       },
       {
-        "label": "Review",
-        "properties": ["review_id", "product_id", "user_id"]
-      }
-    ],
-    "constraints": [
-      {
-        "label": "User",
-        "property": "user_id",
-        "type": "UNIQUE"
+        "entity_pattern": "(de:DataElement)",
+        "attribute": "de.name_embedding",
+        "similarityFunction": "cosine",
+        "M": 16,
+        "efConstruction": 200,
+        "efRuntime": 10
       },
       {
-        "label": "Product",
-        "property": "product_id",
-        "type": "UNIQUE"
+        "entity_pattern": "(de:DataElement)",
+        "attribute": "de.description_embedding",
+        "similarityFunction": "cosine",
+        "M": 16,
+        "efConstruction": 200,
+        "efRuntime": 10
       },
       {
-        "label": "Category",
-        "property": "category_id",
-        "type": "UNIQUE"
-      },
-      {
-        "label": "Review",
-        "property": "review_id",
-        "type": "UNIQUE"
-      }
-    ],
-    "node_files": [
-      {
-        "file": "users.csv",
-        "node_label": "User",
-        "batch_size": 500,
-        "embedding_fields": [],
-        "field_mappings": {
-          "user_id": "user_id",
-          "username": "username",
-          "email": "email",
-          "age": "age"
-        }
-      },
-      {
-        "file": "categories.csv",
-        "node_label": "Category",
-        "batch_size": 500,
-        "embedding_fields": ["description"],
-        "field_mappings": {
-          "category_id": "category_id",
-          "category_name": "category_name",
-          "description": "description"
-        }
-      },
-      {
-        "file": "products.csv",
-        "node_label": "Product",
-        "batch_size": 500,
-        "embedding_fields": ["description"],
-        "field_mappings": {
-          "product_id": "product_id",
-          "name": "name",
-          "description": "description",
-          "price": "price"
-        }
-      },
-      {
-        "file": "reviews.csv",
-        "node_label": "Review",
-        "batch_size": 500,
-        "embedding_fields": ["review_text"],
-        "field_mappings": {
-          "review_id": "review_id",
-          "rating": "rating",
-          "review_text": "review_text",
-          "review_date": "review_date"
-        }
-      }
-    ],
-    "relationship_files": [
-      {
-        "file": "products.csv",
-        "batch_size": 500,
-        "relationship": {
-          "type": "BELONGS_TO_CATEGORY",
-          "source": {
-            "label": "Product",
-            "key_field": "product_id",
-            "csv_field": "product_id"
-          },
-          "target": {
-            "label": "Category",
-            "key_field": "category_id",
-            "csv_field": "category_id"
-          }
-        }
-      },
-      {
-        "file": "reviews.csv",
-        "batch_size": 500,
-        "relationship": {
-          "type": "WRITTEN_BY",
-          "source": {
-            "label": "Review",
-            "key_field": "review_id",
-            "csv_field": "review_id"
-          },
-          "target": {
-            "label": "User",
-            "key_field": "user_id",
-            "csv_field": "user_id"
-          }
-        }
-      },
-      {
-        "file": "reviews.csv",
-        "batch_size": 500,
-        "relationship": {
-          "type": "REVIEWS",
-          "source": {
-            "label": "Review",
-            "key_field": "review_id",
-            "csv_field": "review_id"
-          },
-          "target": {
-            "label": "Product",
-            "key_field": "product_id",
-            "csv_field": "product_id"
-          }
-        }
+        "entity_pattern": "(a:App)",
+        "attribute": "a.appname_embedding",
+        "similarityFunction": "cosine",
+        "M": 16,
+        "efConstruction": 200,
+        "efRuntime": 10
       }
     ]
-  }
+  },
+  "data_quality": {
+    "enabled": true,
+    "max_null_percentage": 0.5,
+    "duplicate_detection": true,
+    "outlier_detection": true,
+    "data_profiling": true
+  },
+  "processing_optimization": {
+    "enabled": true,
+    "preserve_all_data": true,
+    "optimize_embeddings": true,
+    "optimize_nodes": true,
+    "batch_relationships": true,
+    "relationship_batch_size": 2000
+  },
+  "indexes": [
+    {
+      "label": "Report",
+      "properties": ["reportid", "type", "reportOwner", "inScope"]
+    },
+    {
+      "label": "Process",
+      "properties": ["processid", "type", "lob", "le", "countryname"]
+    },
+    {
+      "label": "Map",
+      "properties": ["map", "type", "processid"]
+    },
+    {
+      "label": "DataElement",
+      "properties": ["elementid", "type", "data_element_type"]
+    },
+    {
+      "label": "App",
+      "properties": ["app", "type", "eucindicator", "dataClassification"]
+    }
+  ],
+  "constraints": [
+    {
+      "label": "Report",
+      "property": "reportid",
+      "type": "UNIQUE"
+    },
+    {
+      "label": "Process",
+      "property": "processid",
+      "type": "UNIQUE"
+    },
+    {
+      "label": "Map",
+      "property": "map",
+      "type": "UNIQUE"
+    },
+    {
+      "label": "DataElement",
+      "property": "elementid",
+      "type": "UNIQUE"
+    },
+    {
+      "label": "App",
+      "property": "app",
+      "type": "UNIQUE"
+    }
+  ],
+  "node_files": [
+    {
+      "file": "Report.csv",
+      "node_label": "Report",
+      "batch_size": 1000,
+      "embedding_fields": ["reportname", "reportdescription"],
+      "field_mappings": {
+        "type": "type",
+        "reportid": "reportid",
+        "reportname": "reportname",
+        "reportdescription": "reportdescription",
+        "rris": "rris",
+        "consumesmap": "consumesmap",
+        "inScope": "inScope",
+        "reportProducingProcess": "reportProducingProcess",
+        "associatedprocessid": "associatedprocessid",
+        "reportOwner": "reportOwner"
+      }
+    },
+    {
+      "file": "Process.csv",
+      "node_label": "Process",
+      "batch_size": 1000,
+      "embedding_fields": ["processname"],
+      "field_mappings": {
+        "type": "type",
+        "processid": "processid",
+        "processname": "processname",
+        "supportedapp": "supportedapp",
+        "lob": "lob",
+        "le": "le",
+        "countryname": "countryname"
+      }
+    },
+    {
+      "file": "Maps.csv",
+      "node_label": "Map",
+      "batch_size": 1000,
+      "embedding_fields": [],
+      "field_mappings": {
+        "type": "type",
+        "map": "map",
+        "processid": "processid",
+        "consumedmetric": "consumedmetric",
+        "producedmetric": "producedmetric",
+        "producedbde": "producedbde",
+        "consumedbde": "consumedbde",
+        "upstreamApplicationRightSourceStatus": "upstreamApplicationRightSourceStatus",
+        "upstreamApplicationTrustedSourceStatus": "upstreamApplicationTrustedSourceStatus",
+        "consumedStoredInApp": "consumedStoredInApp",
+        "producedStoredInApp": "producedStoredInApp",
+        "unstructuredArtefactIndicator": "unstructuredArtefactIndicator",
+        "upstreamApplicationIndentifier": "upstreamApplicationIndentifier",
+        "consumedStoredIn": "consumedStoredIn",
+        "producedStoredIn": "producedStoredIn",
+        "trustedStatus": "trustedStatus"
+      }
+    },
+    {
+      "file": "Apps.csv",
+      "node_label": "App",
+      "batch_size": 1000,
+      "embedding_fields": ["App_Inst_Name"],
+      "field_mappings": {
+        "type": "type",
+        "app": "app",
+        "eucindicator": "eucindicator",
+        "isr": "isr",
+        "supportedRegulatoryInitiative": "supportedRegulatoryInitiative",
+        "containsPersonalData": "containsPersonalData",
+        "socScore": "socScore",
+        "App_Inst_Name": "appname",
+        "dataClassification": "dataClassification",
+        "socClassification": "socClassification",
+        "App_Inst_Status": "appStatus",
+        "HOSTING_COUNTRY": "hostingCountry",
+        "HOSTING_REGION": "hostingRegion",
+        "HOSTING_DATA_CENTER": "hostingDataCenter"
+      }
+    },
+    {
+      "file": "DataElements.csv",
+      "node_label": "DataElement",
+      "batch_size": 1000,
+      "embedding_fields": ["name", "description"],
+      "field_mappings": {
+        "elementid": "elementid",
+        "name": "name",
+        "description": "description",
+        "type": "type",
+        "data_element_type": "data_element_type",
+        "sourceMap": "sourceMap",
+        "direction": "direction"
+      }
+    }
+  ],
+  "relationship_files": [
+    {
+      "file": "Report.csv",
+      "batch_size": 2000,
+      "relationship": {
+        "type": "PRODUCED_BY",
+        "source": {
+          "label": "Report",
+          "key_field": "reportid",
+          "csv_field": "reportid"
+        },
+        "target": {
+          "label": "Process",
+          "key_field": "processid",
+          "csv_field": "reportProducingProcess"
+        },
+        "properties": {
+          "relationship_type": "production"
+        }
+      }
+    },
+    {
+      "file": "Report.csv",
+      "batch_size": 2000,
+      "relationship": {
+        "type": "ASSOCIATED_WITH",
+        "source": {
+          "label": "Report",
+          "key_field": "reportid",
+          "csv_field": "reportid"
+        },
+        "target": {
+          "label": "Process",
+          "key_field": "processid",
+          "csv_field": "associatedprocessid"
+        },
+        "properties": {
+          "relationship_type": "association"
+        }
+      }
+    },
+    {
+      "file": "Report.csv",
+      "batch_size": 2000,
+      "relationship": {
+        "type": "CONSUMES_MAP",
+        "source": {
+          "label": "Report",
+          "key_field": "reportid",
+          "csv_field": "reportid"
+        },
+        "target": {
+          "label": "Map",
+          "key_field": "map",
+          "csv_field": "consumesmap"
+        },
+        "properties": {
+          "relationship_type": "consumption"
+        }
+      }
+    },
+    {
+      "file": "Maps.csv",
+      "batch_size": 2000,
+      "relationship": {
+        "type": "BELONGS_TO_PROCESS",
+        "source": {
+          "label": "Map",
+          "key_field": "map",
+          "csv_field": "map"
+        },
+        "target": {
+          "label": "Process",
+          "key_field": "processid",
+          "csv_field": "processid"
+        },
+        "properties": {
+          "relationship_type": "ownership"
+        }
+      }
+    },
+    {
+      "file": "Maps.csv",
+      "batch_size": 2000,
+      "relationship": {
+        "type": "CONSUMED_STORED_IN_APP",
+        "source": {
+          "label": "Map",
+          "key_field": "map",
+          "csv_field": "map"
+        },
+        "target": {
+          "label": "App",
+          "key_field": "app",
+          "csv_field": "consumedStoredInApp"
+        },
+        "properties": {
+          "relationship_type": "storage",
+          "direction": "consumed"
+        }
+      }
+    },
+    {
+      "file": "Maps.csv",
+      "batch_size": 2000,
+      "relationship": {
+        "type": "PRODUCED_STORED_IN_APP",
+        "source": {
+          "label": "Map",
+          "key_field": "map",
+          "csv_field": "map"
+        },
+        "target": {
+          "label": "App",
+          "key_field": "app",
+          "csv_field": "producedStoredInApp"
+        },
+        "properties": {
+          "relationship_type": "storage",
+          "direction": "produced"
+        }
+      }
+    },
+    {
+      "file": "Process.csv",
+      "batch_size": 2000,
+      "relationship": {
+        "type": "SUPPORTED_BY_APP",
+        "source": {
+          "label": "Process",
+          "key_field": "processid",
+          "csv_field": "processid"
+        },
+        "target": {
+          "label": "App",
+          "key_field": "app",
+          "csv_field": "supportedapp"
+        },
+        "properties": {
+          "relationship_type": "support"
+        }
+      }
+    },
+    {
+      "file": "Maps.csv",
+      "batch_size": 2000,
+      "relationship": {
+        "type": "CONSUMES_DATA_ELEMENT",
+        "source": {
+          "label": "Map",
+          "key_field": "map",
+          "csv_field": "map"
+        },
+        "target": {
+          "label": "DataElement",
+          "key_field": "elementid",
+          "csv_field": "consumedbde"
+        },
+        "properties": {
+          "relationship_type": "consumption",
+          "data_element_type": "BusinessDataElement"
+        }
+      }
+    },
+    {
+      "file": "Maps.csv",
+      "batch_size": 2000,
+      "relationship": {
+        "type": "PRODUCES_DATA_ELEMENT",
+        "source": {
+          "label": "Map",
+          "key_field": "map",
+          "csv_field": "map"
+        },
+        "target": {
+          "label": "DataElement",
+          "key_field": "elementid",
+          "csv_field": "producedbde"
+        },
+        "properties": {
+          "relationship_type": "production",
+          "data_element_type": "BusinessDataElement"
+        }
+      }
+    },
+    {
+      "file": "Maps.csv",
+      "batch_size": 2000,
+      "relationship": {
+        "type": "CONSUMES_DATA_ELEMENT",
+        "source": {
+          "label": "Map",
+          "key_field": "map",
+          "csv_field": "map"
+        },
+        "target": {
+          "label": "DataElement",
+          "key_field": "elementid",
+          "csv_field": "consumedmetric"
+        },
+        "properties": {
+          "relationship_type": "consumption",
+          "data_element_type": "ReportMetric"
+        }
+      }
+    },
+    {
+      "file": "Maps.csv",
+      "batch_size": 2000,
+      "relationship": {
+        "type": "PRODUCES_DATA_ELEMENT",
+        "source": {
+          "label": "Map",
+          "key_field": "map",
+          "csv_field": "map"
+        },
+        "target": {
+          "label": "DataElement",
+          "key_field": "elementid",
+          "csv_field": "producedmetric"
+        },
+        "properties": {
+          "relationship_type": "production",
+          "data_element_type": "ReportMetric"
+        }
+      }
+    }
+  ]
+}

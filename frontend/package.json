@@ -1,0 +1,105 @@
+{
+    "name": "falkordb-rag-frontend",
+    "version": "2.0.0",
+    "private": true,
+    "description": "FalkorDB Graph RAG Intelligence Frontend - Advanced graph analytics with AI reasoning (Refactored)",
+    "homepage": ".",
+    "license": "MIT",
+    "author": {
+      "name": "FalkorDB Intelligence Team"
+    },
+    "repository": {
+      "type": "git",
+      "url": "."
+    },
+    "keywords": [
+      "falkordb",
+      "graph-database",
+      "rag",
+      "ai",
+      "business-intelligence",
+      "react",
+      "tailwindcss",
+      "multi-agent",
+      "refactored"
+    ],
+    "dependencies": {
+      "@testing-library/jest-dom": "^6.4.2",
+      "@testing-library/react": "^14.2.1",
+      "@testing-library/user-event": "^14.5.2",
+      "lucide-react": "^0.344.0",
+      "react": "^18.2.0",
+      "react-dom": "^18.2.0",
+      "react-scripts": "5.0.1",
+      "web-vitals": "^3.5.2"
+    },
+    "devDependencies": {
+      "autoprefixer": "^10.4.17",
+      "postcss": "^8.4.35",
+      "tailwindcss": "^3.4.1",
+      "eslint": "^8.0.0",
+      "prettier": "^3.0.0"
+    },
+    "scripts": {
+      "start": "PORT=3001 react-scripts start",
+      "start:default": "react-scripts start",
+      "start:3001": "PORT=3001 react-scripts start",
+      "start:dev": "PORT=3001 REACT_APP_API_URL=http://localhost:5000 react-scripts start",
+      "build": "react-scripts build",
+      "build:analyze": "npm run build && npx serve -s build",
+      "test": "react-scripts test",
+      "test:coverage": "react-scripts test --coverage --watchAll=false",
+      "test:ci": "CI=true react-scripts test --coverage --watchAll=false",
+      "eject": "react-scripts eject",
+      "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+      "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
+      "format": "prettier --write src/**/*.{js,jsx,ts,tsx,css,md}",
+      "format:check": "prettier --check src/**/*.{js,jsx,ts,tsx,css,md}",
+      "analyze": "npm run build && npx serve -s build",
+      "clean": "rm -rf build node_modules package-lock.json && npm install",
+      "setup": "npm install && npm run format && npm run lint:fix"
+    },
+    "eslintConfig": {
+      "extends": [
+        "react-app",
+        "react-app/jest"
+      ],
+      "rules": {
+        "no-unused-vars": "warn",
+        "no-console": "off",
+        "react/prop-types": "warn"
+      }
+    },
+    "browserslist": {
+      "production": [
+        ">0.2%",
+        "not dead",
+        "not op_mini all"
+      ],
+      "development": [
+        "last 1 chrome version",
+        "last 1 firefox version",
+        "last 1 safari version"
+      ]
+    },
+    "engines": {
+      "node": ">=16.0.0",
+      "npm": ">=8.0.0"
+    },
+    "jest": {
+      "collectCoverageFrom": [
+        "src/**/*.{js,jsx}",
+        "!src/index.js",
+        "!src/reportWebVitals.js"
+      ],
+      "coverageThreshold": {
+        "global": {
+          "branches": 70,
+          "functions": 70,
+          "lines": 70,
+          "statements": 70
+        }
+      }
+    }
+  }
+  

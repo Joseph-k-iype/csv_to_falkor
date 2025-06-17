@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#3b82f6" />
+  <meta name="description" content="FalkorDB Graph RAG Search Engine - AI-powered graph analytics with business intelligence. Explore your graph data with validated openCypher queries and get actionable insights." />
+  <meta name="keywords" content="FalkorDB, Graph Database, RAG, AI, Business Intelligence, OpenCypher, Graph Analytics" />
+  <meta name="author" content="FalkorDB Intelligence Team" />
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="FalkorDB Graph RAG Intelligence" />
+  <meta property="og:description" content="AI-powered graph analytics platform for business intelligence" />
+  <meta property="og:image" content="%PUBLIC_URL%/og-image.png" />
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:title" content="FalkorDB Graph RAG Intelligence" />
+  <meta property="twitter:description" content="AI-powered graph analytics platform for business intelligence" />
+  
+  <!-- Preconnect to external domains for performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+  <!-- Preload critical fonts -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
+  </noscript>
+  
+  <title>FalkorDB Graph RAG Intelligence</title>
+  
+  <!-- Inline critical CSS to prevent flash of unstyled content -->
+  <style>
+    /* Critical CSS for initial render */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #e8eaf6 100%);
+      color: #1f2937;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    
+    #root {
+      min-height: 100vh;
+    }
+    
+    /* Loading state */
+    .loading-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #e8eaf6 100%);
+    }
+    
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e5e7eb;
+      border-top: 3px solid #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Hide loading once React loads */
+    #root:not(:empty) + .loading-container {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <noscript>
+    <div style="
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      min-height: 100vh; 
+      background: #f8fafc; 
+      font-family: Inter, sans-serif;
+      text-align: center;
+      padding: 2rem;
+    ">
+      <div>
+        <h1 style="color: #1f2937; margin-bottom: 1rem;">JavaScript Required</h1>
+        <p style="color: #6b7280; max-width: 400px;">
+          FalkorDB Graph RAG Intelligence requires JavaScript to run. 
+          Please enable JavaScript in your browser to continue.
+        </p>
+      </div>
+    </div>
+  </noscript>
+  
+  <div id="root"></div>
+  
+  <!-- Fallback loading indicator -->
+  <div class="loading-container">
+    <div style="text-align: center;">
+      <div class="loading-spinner"></div>
+      <p style="margin-top: 1rem; color: #6b7280; font-size: 0.875rem;">
+        Loading FalkorDB Intelligence...
+      </p>
+    </div>
+  </div>
+  
+  <!-- Service Worker Registration (optional for PWA features) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((registration) => {
+            console.log('SW registered: ', registration);
+          })
+          .catch((registrationError) => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+    }
+  </script>
+</body>
+</html>
